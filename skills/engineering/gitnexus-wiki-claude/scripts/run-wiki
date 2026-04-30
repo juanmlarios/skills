@@ -6,12 +6,13 @@
 # when this script exits.
 #
 # Usage:
-#   run-wiki [model] [extra args passed through to `npx gitnexus wiki`]
+#   run-wiki [model] [--out <dir>] [extra args passed through to `npx gitnexus wiki`]
 # Examples:
-#   run-wiki                       # default: model=sonnet, no extra args
-#   run-wiki opus                  # use Opus
-#   run-wiki sonnet --force        # force full regen
-#   run-wiki sonnet --verbose
+#   run-wiki                              # model=sonnet, output to .gitnexus/wiki/
+#   run-wiki haiku                        # use Haiku (faster)
+#   run-wiki sonnet --force               # force full regen
+#   run-wiki haiku --out docs/wiki        # copy result to docs/wiki/ after generation
+#   run-wiki haiku --out docs/wiki --force --verbose
 set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -64,10 +65,54 @@ fi
 MODEL="${1:-sonnet}"
 shift || true
 
+# Pull --out / --out-dir out of the arg list before passing the rest through
+# to gitnexus wiki (which doesn't have an output flag).
+OUT_DIR=""
+GITNEXUS_ARGS=()
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --out|--out-dir)
+      OUT_DIR="$2"
+      shift 2
+      ;;
+    --out=*|--out-dir=*)
+      OUT_DIR="${1#*=}"
+      shift
+      ;;
+    *)
+      GITNEXUS_ARGS+=("$1")
+      shift
+      ;;
+  esac
+done
+
+REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+WIKI_SRC="$REPO_ROOT/.gitnexus/wiki"
+
 echo "[run-wiki] proxy on http://127.0.0.1:$PORT, model=$MODEL"
-exec npx gitnexus wiki \
+npx gitnexus wiki \
   --provider openai \
   --base-url "http://127.0.0.1:$PORT/v1" \
   --api-key "dummy-claude-routed" \
   --model "$MODEL" \
-  "$@"
+  "${GITNEXUS_ARGS[@]}"
+GITNEXUS_EXIT=$?
+
+if [ $GITNEXUS_EXIT -ne 0 ]; then
+  exit $GITNEXUS_EXIT
+fi
+
+if [ -n "$OUT_DIR" ]; then
+  if [ ! -d "$WIKI_SRC" ]; then
+    echo "[run-wiki] expected wiki at $WIKI_SRC but it doesn't exist" >&2
+    exit 4
+  fi
+  # Resolve OUT_DIR relative to the original cwd, not the repo root.
+  if [[ "$OUT_DIR" != /* ]]; then
+    OUT_DIR="$PWD/$OUT_DIR"
+  fi
+  mkdir -p "$(dirname "$OUT_DIR")"
+  rm -rf "$OUT_DIR"
+  cp -R "$WIKI_SRC" "$OUT_DIR"
+  echo "[run-wiki] copied wiki to $OUT_DIR"
+fi

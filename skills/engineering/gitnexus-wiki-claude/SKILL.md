@@ -40,13 +40,17 @@ Verify before invoking:
 Always run from the project root:
 
 ```bash
-~/.claude/skills/gitnexus-wiki-claude/scripts/run-wiki              # default model: sonnet
-~/.claude/skills/gitnexus-wiki-claude/scripts/run-wiki opus         # use Opus
-~/.claude/skills/gitnexus-wiki-claude/scripts/run-wiki sonnet --force        # force full regen
-~/.claude/skills/gitnexus-wiki-claude/scripts/run-wiki sonnet --verbose
+~/.claude/skills/gitnexus-wiki-claude/scripts/run-wiki                         # default: sonnet, output at .gitnexus/wiki/
+~/.claude/skills/gitnexus-wiki-claude/scripts/run-wiki haiku                   # use Haiku (faster)
+~/.claude/skills/gitnexus-wiki-claude/scripts/run-wiki opus                    # use Opus (deeper prose)
+~/.claude/skills/gitnexus-wiki-claude/scripts/run-wiki haiku --force           # force full regen
+~/.claude/skills/gitnexus-wiki-claude/scripts/run-wiki haiku --out docs/wiki   # copy result to docs/wiki/ after
+~/.claude/skills/gitnexus-wiki-claude/scripts/run-wiki haiku --out docs/wiki --force --verbose
 ```
 
-Any extra args after the model are forwarded to `npx gitnexus wiki`.
+`--out <dir>` (or `--out-dir <dir>`) copies the generated wiki to `<dir>` after `gitnexus wiki` finishes. Any path under the project root is fine; `<dir>` is created if missing and overwritten if it already exists. Any other args are forwarded to `npx gitnexus wiki`.
+
+Note: `gitnexus wiki` always writes to `.gitnexus/wiki/` first — there's no output flag in the upstream tool. `--out` is a copy-after-generation step, not a redirect; the canonical copy in `.gitnexus/wiki/` stays put (the `index.html` viewer relies on it).
 
 ## Reading output
 
