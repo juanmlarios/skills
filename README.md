@@ -1,41 +1,65 @@
-# skills
+# GitNexus Wiki Claude Skill
 
-Starter repository for personal agent skills.
+This repository contains one Codex/Claude-compatible skill:
+`gitnexus-wiki-claude`.
 
-## Install
+The skill regenerates a GitNexus wiki with the upstream `npx gitnexus wiki`
+command, but routes the LLM calls through the local Claude Code CLI. It is for
+projects that have already been indexed with `npx gitnexus analyze` and where
+the user wants wiki output without configuring a separate API key.
 
-After you push this repo to GitHub, install from it with:
-
-```bash
-npx skills@latest add your-github-username/skills
-```
-
-Replace `your-github-username` with your actual GitHub username. If you rename the repository, update the command to match.
-
-## Repository Layout
-
-The installer looks for skill folders that contain a `SKILL.md` file.
+## Contents
 
 ```text
 skills/
-  productivity/
-    create-workplan/
-      SKILL.md
   engineering/
-    review-local-changes/
+    gitnexus-wiki-claude/
       SKILL.md
+      scripts/
+        proxy.py
+        run-wiki
 ```
 
-Each skill folder can also contain optional `scripts/`, `references/`, or `assets/` directories if the skill needs extra resources.
+## Install
 
-## Add a New Skill
+Install the skill from this repository with the skills CLI:
 
-1. Create a new folder under `skills/<category>/<skill-name>/`.
-2. Add a `SKILL.md` file with YAML frontmatter.
-3. Commit and push the changes.
-4. Re-run the installer command if you want the updated skill set available locally.
+```bash
+npx skills@latest add juanmlarios/skills
+```
 
-## Notes
+## Usage
 
-- There is no custom `skills.sh` file in this repository. The installer is the external `skills` CLI.
-- The most important metadata is in each skill's `name` and `description`. Those fields determine when the skill is selected.
+Run the helper script from the root of the repository whose wiki you want to
+refresh:
+
+```bash
+~/.claude/skills/gitnexus-wiki-claude/scripts/run-wiki
+```
+
+Common options:
+
+```bash
+~/.claude/skills/gitnexus-wiki-claude/scripts/run-wiki haiku
+~/.claude/skills/gitnexus-wiki-claude/scripts/run-wiki opus
+~/.claude/skills/gitnexus-wiki-claude/scripts/run-wiki sonnet --force
+~/.claude/skills/gitnexus-wiki-claude/scripts/run-wiki haiku --out docs/wiki
+```
+
+`--out <dir>` copies the generated wiki from `.gitnexus/wiki/` to another
+directory after generation finishes.
+
+## Requirements
+
+- A GitNexus-indexed project: run `npx gitnexus analyze` first if `.gitnexus/`
+  does not exist.
+- `claude`, `npx`, and `python3` available on `PATH`.
+- Claude Code already authenticated locally.
+
+## How It Works
+
+`scripts/run-wiki` starts a small OpenAI-compatible localhost proxy, invokes
+`npx gitnexus wiki` against that proxy, and forwards each chat-completion
+request to `claude --print`. The proxy exits when the wiki command completes.
+
+No daemon is left running and no API key is required.
