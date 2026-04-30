@@ -1,0 +1,73 @@
+#!/usr/bin/env bash
+# Regenerate the gitnexus wiki using the local `claude` CLI as the LLM.
+#
+# Spins up an OpenAI-compatible proxy on a random localhost port, then runs
+# `npx gitnexus wiki` pointed at it via --provider custom. The proxy exits
+# when this script exits.
+#
+# Usage:
+#   run-wiki [model] [extra args passed through to `npx gitnexus wiki`]
+# Examples:
+#   run-wiki                       # default: model=sonnet, no extra args
+#   run-wiki opus                  # use Opus
+#   run-wiki sonnet --force        # force full regen
+#   run-wiki sonnet --verbose
+set -euo pipefail
+
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# 1) Sanity checks.
+command -v claude >/dev/null 2>&1 || {
+  echo "[run-wiki] error: \`claude\` CLI not found on PATH; install Claude Code." >&2
+  exit 2
+}
+command -v npx >/dev/null 2>&1 || {
+  echo "[run-wiki] error: \`npx\` not found on PATH; install Node.js." >&2
+  exit 2
+}
+command -v python3 >/dev/null 2>&1 || {
+  echo "[run-wiki] error: \`python3\` not found on PATH." >&2
+  exit 2
+}
+
+# 2) Pick a free localhost port.
+PORT="$(python3 -c '
+import socket
+s = socket.socket()
+s.bind(("127.0.0.1", 0))
+print(s.getsockname()[1])
+s.close()
+')"
+
+# 3) Start the proxy in the background, kill on exit.
+python3 "$HERE/proxy.py" --port "$PORT" >/tmp/claude-proxy.log 2>&1 &
+PROXY_PID=$!
+trap '
+  kill "$PROXY_PID" 2>/dev/null || true
+  wait "$PROXY_PID" 2>/dev/null || true
+' EXIT INT TERM
+
+# 4) Wait for /health to come up (up to ~5s).
+for _ in $(seq 1 50); do
+  if curl -sf "http://127.0.0.1:$PORT/health" >/dev/null 2>&1; then
+    break
+  fi
+  sleep 0.1
+done
+
+if ! curl -sf "http://127.0.0.1:$PORT/health" >/dev/null 2>&1; then
+  echo "[run-wiki] proxy failed to start; see /tmp/claude-proxy.log" >&2
+  exit 3
+fi
+
+# 5) Run the wiki generator pointed at the proxy.
+MODEL="${1:-sonnet}"
+shift || true
+
+echo "[run-wiki] proxy on http://127.0.0.1:$PORT, model=$MODEL"
+exec npx gitnexus wiki \
+  --provider openai \
+  --base-url "http://127.0.0.1:$PORT/v1" \
+  --api-key "dummy-claude-routed" \
+  --model "$MODEL" \
+  "$@"
