@@ -1,12 +1,29 @@
-# GitNexus Wiki Claude Skill
+# Skills
 
-This repository contains one Codex/Claude-compatible skill:
-`gitnexus-wiki-claude`.
+This repository contains Codex/Claude-compatible skills for GitNexus-assisted
+engineering workflows.
 
-The skill regenerates a GitNexus wiki with the upstream `npx gitnexus wiki`
-command, but routes the LLM calls through the local Claude Code CLI. It is for
-projects that have already been indexed with `npx gitnexus analyze` and where
-the user wants wiki output without configuring a separate API key.
+## Skills
+
+### `gitnexus-wiki-claude`
+
+Regenerates a GitNexus wiki with the upstream `npx gitnexus wiki` command, but
+routes the LLM calls through the local Claude Code CLI. It is for projects that
+have already been indexed with `npx gitnexus analyze` and where the user wants
+wiki output without configuring a separate API key.
+
+### `improve-codebase-architecture`
+
+Finds deepening opportunities in a codebase using GitNexus exploration,
+project domain language from `CONTEXT.md`, and decisions from `docs/adr/`.
+Use it when you want to improve architecture, find refactoring opportunities,
+consolidate tightly-coupled modules, or make a codebase more testable and
+AI-navigable.
+
+The skill uses GitNexus to inspect repo context, clusters, execution flows,
+symbol context, and upstream impact before proposing architecture candidates.
+It keeps the recommendations framed in terms of modules, interfaces, seams,
+adapters, depth, leverage, and locality.
 
 ## Contents
 
@@ -18,6 +35,11 @@ skills/
       scripts/
         proxy.py
         run-wiki
+    improve-codebase-architecture/
+      SKILL.md
+      DEEPENING.md
+      INTERFACE-DESIGN.md
+      LANGUAGE.md
 ```
 
 ## Install
@@ -36,7 +58,7 @@ For a global install:
 npx skills@latest add juanmlarios/skills -g
 ```
 
-## Usage
+## Usage: `gitnexus-wiki-claude`
 
 Run the helper script from the root of the repository whose wiki you want to
 refresh:
@@ -83,3 +105,23 @@ command from that project root, or reinstall with `-g` for the global path.
 request to `claude --print`. The proxy exits when the wiki command completes.
 
 No daemon is left running and no API key is required.
+
+## Usage: `improve-codebase-architecture`
+
+Ask Codex or Claude to use the skill while working in a GitNexus-indexed
+project:
+
+```text
+Use the improve-codebase-architecture skill to find deepening opportunities in this codebase.
+```
+
+The target project should have been analyzed with GitNexus:
+
+```bash
+npx gitnexus analyze
+```
+
+The skill first reads `CONTEXT.md` and relevant ADRs, then uses GitNexus repo
+context, clusters, process traces, symbol context, and impact analysis to build
+an evidence-backed list of architecture candidates. It asks which candidate to
+explore before proposing concrete interfaces.
