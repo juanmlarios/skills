@@ -39,7 +39,17 @@ Verify before invoking:
 
 Always run from the project root:
 
-If this skill was installed project-locally, use the project path:
+Resolve the helper script in this order:
+
+1. If `./.claude/skills/gitnexus-wiki-claude/scripts/run-wiki` exists and is
+   executable, use it. This is the path for project-local installs.
+2. Otherwise, if `~/.claude/skills/gitnexus-wiki-claude/scripts/run-wiki`
+   exists and is executable, use it. This is the path for global installs.
+3. If neither exists, stop and tell the user to install or update the skill
+   with `npx skills@latest add juanmlarios/skills` for project-local use, or
+   `npx skills@latest add juanmlarios/skills -g` for global use.
+
+Project-local examples:
 
 ```bash
 ./.claude/skills/gitnexus-wiki-claude/scripts/run-wiki                         # default: sonnet, output at .gitnexus/wiki/
@@ -50,8 +60,7 @@ If this skill was installed project-locally, use the project path:
 ./.claude/skills/gitnexus-wiki-claude/scripts/run-wiki haiku --out docs/wiki --force --verbose
 ```
 
-If this skill was installed globally with `npx skills@latest add ... -g`, use
-the global path instead:
+Global example:
 
 ```bash
 ~/.claude/skills/gitnexus-wiki-claude/scripts/run-wiki
