@@ -22,16 +22,32 @@ skills/
 
 ## Install
 
-Install the skill from this repository with the skills CLI:
+Install the skill from this repository with the skills CLI.
+
+For a project-local install:
 
 ```bash
 npx skills@latest add juanmlarios/skills
+```
+
+For a global install:
+
+```bash
+npx skills@latest add juanmlarios/skills -g
 ```
 
 ## Usage
 
 Run the helper script from the root of the repository whose wiki you want to
 refresh:
+
+If you installed the skill into the current project:
+
+```bash
+./.claude/skills/gitnexus-wiki-claude/scripts/run-wiki
+```
+
+If you installed the skill globally:
 
 ```bash
 ~/.claude/skills/gitnexus-wiki-claude/scripts/run-wiki
@@ -40,14 +56,18 @@ refresh:
 Common options:
 
 ```bash
-~/.claude/skills/gitnexus-wiki-claude/scripts/run-wiki haiku
-~/.claude/skills/gitnexus-wiki-claude/scripts/run-wiki opus
-~/.claude/skills/gitnexus-wiki-claude/scripts/run-wiki sonnet --force
-~/.claude/skills/gitnexus-wiki-claude/scripts/run-wiki haiku --out docs/wiki
+./.claude/skills/gitnexus-wiki-claude/scripts/run-wiki haiku
+./.claude/skills/gitnexus-wiki-claude/scripts/run-wiki opus
+./.claude/skills/gitnexus-wiki-claude/scripts/run-wiki sonnet --force
+./.claude/skills/gitnexus-wiki-claude/scripts/run-wiki haiku --out docs/wiki
 ```
 
 `--out <dir>` copies the generated wiki from `.gitnexus/wiki/` to another
 directory after generation finishes.
+
+If you see `no such file or directory: ~/.claude/skills/gitnexus-wiki-claude/scripts/run-wiki`,
+the skill was probably installed project-locally. Run the `./.claude/...`
+command from that project root, or reinstall with `-g` for the global path.
 
 ## Requirements
 

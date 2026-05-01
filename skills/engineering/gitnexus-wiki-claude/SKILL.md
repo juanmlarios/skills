@@ -39,13 +39,22 @@ Verify before invoking:
 
 Always run from the project root:
 
+If this skill was installed project-locally, use the project path:
+
 ```bash
-~/.claude/skills/gitnexus-wiki-claude/scripts/run-wiki                         # default: sonnet, output at .gitnexus/wiki/
-~/.claude/skills/gitnexus-wiki-claude/scripts/run-wiki haiku                   # use Haiku (faster)
-~/.claude/skills/gitnexus-wiki-claude/scripts/run-wiki opus                    # use Opus (deeper prose)
-~/.claude/skills/gitnexus-wiki-claude/scripts/run-wiki haiku --force           # force full regen
-~/.claude/skills/gitnexus-wiki-claude/scripts/run-wiki haiku --out docs/wiki   # copy result to docs/wiki/ after
-~/.claude/skills/gitnexus-wiki-claude/scripts/run-wiki haiku --out docs/wiki --force --verbose
+./.claude/skills/gitnexus-wiki-claude/scripts/run-wiki                         # default: sonnet, output at .gitnexus/wiki/
+./.claude/skills/gitnexus-wiki-claude/scripts/run-wiki haiku                   # use Haiku (faster)
+./.claude/skills/gitnexus-wiki-claude/scripts/run-wiki opus                    # use Opus (deeper prose)
+./.claude/skills/gitnexus-wiki-claude/scripts/run-wiki haiku --force           # force full regen
+./.claude/skills/gitnexus-wiki-claude/scripts/run-wiki haiku --out docs/wiki   # copy result to docs/wiki/ after
+./.claude/skills/gitnexus-wiki-claude/scripts/run-wiki haiku --out docs/wiki --force --verbose
+```
+
+If this skill was installed globally with `npx skills@latest add ... -g`, use
+the global path instead:
+
+```bash
+~/.claude/skills/gitnexus-wiki-claude/scripts/run-wiki
 ```
 
 `--out <dir>` (or `--out-dir <dir>`) copies the generated wiki to `<dir>` after `gitnexus wiki` finishes. Any path under the project root is fine; `<dir>` is created if missing and overwritten if it already exists. Any other args are forwarded to `npx gitnexus wiki`.
