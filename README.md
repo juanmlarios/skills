@@ -12,6 +12,13 @@ routes the LLM calls through the local Claude Code CLI. It is for projects that
 have already been indexed with `npx gitnexus analyze` and where the user wants
 wiki output without configuring a separate API key.
 
+### `gitnexus-ollama-index`
+
+Prepares a local Ollama embedding model, then runs `gitnexus analyze
+--embeddings` for a project. Use it when you want to index or reindex a local
+project with embeddings, force rebuild stale or corrupt GitNexus data, or
+explicitly remove and rebuild a registered GitNexus index.
+
 ### `improve-codebase-architecture`
 
 Finds deepening opportunities in a codebase using GitNexus exploration,
@@ -35,6 +42,12 @@ skills/
       scripts/
         proxy.py
         run-wiki
+    gitnexus-ollama-index/
+      SKILL.md
+      agents/
+        openai.yaml
+      scripts/
+        gitnexus-ollama-index
     improve-codebase-architecture/
       SKILL.md
       DEEPENING.md
@@ -105,6 +118,30 @@ command from that project root, or reinstall with `-g` for the global path.
 request to `claude --print`. The proxy exits when the wiki command completes.
 
 No daemon is left running and no API key is required.
+
+## Usage: `gitnexus-ollama-index`
+
+Run the helper script from the root of the repository you want to index:
+
+```bash
+./.claude/skills/gitnexus-ollama-index/scripts/gitnexus-ollama-index
+```
+
+Common options:
+
+```bash
+./.claude/skills/gitnexus-ollama-index/scripts/gitnexus-ollama-index --force
+./.claude/skills/gitnexus-ollama-index/scripts/gitnexus-ollama-index --name SecureLift-Agents /Users/juan/GitHub/SecureLift-Agents
+./.claude/skills/gitnexus-ollama-index/scripts/gitnexus-ollama-index --remove SecureLift-Agents --force /Users/juan/GitHub/SecureLift-Agents
+```
+
+The helper checks `ollama`, `gitnexus`, and `python3`, starts `ollama serve`
+when needed, verifies `qwen3-embedding:0.6b` is installed, warms the model via
+`/api/embed`, and then runs `gitnexus analyze --embeddings`.
+
+`--remove <target>` is intentionally explicit and runs `gitnexus remove
+<target> --force` before indexing. For ordinary reindexing, use `--force`
+without `--remove`.
 
 ## Usage: `improve-codebase-architecture`
 

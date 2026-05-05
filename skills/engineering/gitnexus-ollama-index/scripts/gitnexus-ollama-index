@@ -1,0 +1,224 @@
+#!/usr/bin/env python3
+"""Warm an Ollama embedding model, then run GitNexus embedding analysis."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import shutil
+import subprocess
+import sys
+import time
+import urllib.error
+import urllib.parse
+import urllib.request
+from pathlib import Path
+from typing import Sequence
+
+
+DEFAULT_MODEL = "qwen3-embedding:0.6b"
+DEFAULT_KEEP_ALIVE = "30m"
+DEFAULT_HOST = "http://127.0.0.1:11434"
+OLLAMA_LOG = Path("/tmp/gitnexus-ollama-index-ollama.log")
+WARMUP_INPUT = "GitNexus embedding warmup"
+
+
+class CommandError(RuntimeError):
+    """Raised when a subprocess exits unsuccessfully."""
+
+
+def normalize_host(host: str) -> str:
+    host = host.strip().rstrip("/")
+    if host.startswith(("http://", "https://")):
+        return host
+    return f"http://{host}"
+
+
+def host_for_ollama_env(host: str) -> str:
+    parsed = urllib.parse.urlparse(host)
+    return parsed.netloc or parsed.path
+
+
+def require_command(name: str) -> str:
+    path = shutil.which(name)
+    if path is None:
+        raise CommandError(f"Required command not found on PATH: {name}")
+    return path
+
+
+def print_command(command: Sequence[str], cwd: Path | None = None) -> None:
+    prefix = f"(cd {cwd} && " if cwd is not None else ""
+    suffix = ")" if cwd is not None else ""
+    quoted = " ".join(subprocess.list2cmdline([part]) for part in command)
+    print(f"{prefix}{quoted}{suffix}")
+
+
+def request_json(host: str, endpoint: str, payload: dict[str, object] | None = None, timeout: float = 5.0) -> dict[str, object]:
+    url = f"{host}{endpoint}"
+    data = None
+    headers = {}
+    if payload is not None:
+        data = json.dumps(payload).encode("utf-8")
+        headers["Content-Type"] = "application/json"
+    request = urllib.request.Request(url, data=data, headers=headers)
+    with urllib.request.urlopen(request, timeout=timeout) as response:
+        raw = response.read().decode("utf-8")
+    if raw.strip() == "":
+        return {}
+    return json.loads(raw)
+
+
+def ollama_reachable(host: str) -> bool:
+    try:
+        request_json(host, "/api/version", timeout=2.0)
+        return True
+    except (OSError, urllib.error.URLError, TimeoutError, json.JSONDecodeError):
+        return False
+
+
+def start_ollama(host: str, verbose: bool) -> None:
+    if verbose:
+        print(f"Ollama is not reachable at {host}; starting `ollama serve`.")
+        print(f"Ollama log: {OLLAMA_LOG}")
+    log_handle = OLLAMA_LOG.open("ab")
+    subprocess.Popen(
+        ["ollama", "serve"],
+        stdout=log_handle,
+        stderr=subprocess.STDOUT,
+        env={**os.environ, "OLLAMA_HOST": host_for_ollama_env(host)},
+        start_new_session=True,
+    )
+    for _ in range(30):
+        if ollama_reachable(host):
+            return
+        time.sleep(0.5)
+    raise CommandError(f"Ollama did not become reachable at {host}. Check {OLLAMA_LOG}.")
+
+
+def run_checked(command: Sequence[str], cwd: Path | None = None, verbose: bool = False) -> None:
+    if verbose:
+        print_command(command, cwd)
+    completed = subprocess.run(command, cwd=cwd)
+    if completed.returncode != 0:
+        raise CommandError(f"Command failed with exit code {completed.returncode}: {' '.join(command)}")
+
+
+def ensure_model_exists(model: str, verbose: bool) -> None:
+    command = ["ollama", "show", model]
+    if verbose:
+        print_command(command)
+    completed = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    if completed.returncode == 0:
+        return
+    detail = completed.stderr.strip() or completed.stdout.strip()
+    if detail:
+        detail = f"\nOllama said: {detail}"
+    raise CommandError(f"Ollama model is not available: {model}{detail}\nInstall it with: ollama pull {model}")
+
+
+def warm_model(host: str, model: str, keep_alive: str, verbose: bool) -> None:
+    payload = {
+        "model": model,
+        "input": WARMUP_INPUT,
+        "keep_alive": keep_alive,
+    }
+    if verbose:
+        print(f"Warming Ollama model {model} via {host}/api/embed.")
+    try:
+        result = request_json(host, "/api/embed", payload=payload, timeout=120.0)
+    except (OSError, urllib.error.URLError, TimeoutError, json.JSONDecodeError) as exc:
+        raise CommandError(f"Failed to warm Ollama model {model}: {exc}") from exc
+    embeddings = result.get("embeddings")
+    if not isinstance(embeddings, list) or len(embeddings) == 0:
+        raise CommandError(f"Ollama warmup returned no embeddings for model {model}.")
+    first = embeddings[0]
+    if not isinstance(first, list) or len(first) == 0:
+        raise CommandError(f"Ollama warmup returned an empty embedding for model {model}.")
+    print(f"Warmed Ollama model {model}; embedding dimensions: {len(first)}.")
+
+
+def build_analyze_command(args: argparse.Namespace, target_path: Path) -> list[str]:
+    command = ["gitnexus", "analyze", "--embeddings"]
+    if args.force:
+        command.append("--force")
+    if args.name:
+        command.extend(["--name", args.name])
+    command.append(str(target_path))
+    return command
+
+
+def parse_args(argv: Sequence[str]) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Warm an Ollama embedding model, then run GitNexus analyze --embeddings.",
+    )
+    parser.add_argument("path", nargs="?", default=".", help="Project path to index. Default: current directory.")
+    parser.add_argument("--model", default=DEFAULT_MODEL, help=f"Ollama embedding model. Default: {DEFAULT_MODEL}.")
+    parser.add_argument("--keep-alive", default=DEFAULT_KEEP_ALIVE, help=f"Ollama keep_alive value. Default: {DEFAULT_KEEP_ALIVE}.")
+    parser.add_argument("--host", default=os.environ.get("OLLAMA_HOST", DEFAULT_HOST), help="Ollama host URL.")
+    parser.add_argument("--name", help="Forwarded to `gitnexus analyze --name <alias>`.")
+    parser.add_argument("--force", action="store_true", help="Run `gitnexus analyze --embeddings --force`.")
+    parser.add_argument("--remove", help="Explicitly run `gitnexus remove <target> --force` before analyzing.")
+    parser.add_argument("--warm-only", action="store_true", help="Check and warm Ollama, then stop before GitNexus indexing.")
+    parser.add_argument("--dry-run", action="store_true", help="Print intended commands without starting Ollama or indexing.")
+    parser.add_argument("--verbose", action="store_true", help="Print detailed progress.")
+    return parser.parse_args(argv)
+
+
+def main(argv: Sequence[str]) -> int:
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(line_buffering=True)
+    args = parse_args(argv)
+    host = normalize_host(args.host)
+    target_path = Path(args.path).expanduser().resolve()
+
+    try:
+        require_command("python3")
+        require_command("ollama")
+        require_command("gitnexus")
+
+        if args.dry_run:
+            print(f"Ollama host: {host}")
+            print(f"Ollama model: {args.model}")
+            print(f"Ollama keep_alive: {args.keep_alive}")
+            if args.remove:
+                print_command(["gitnexus", "remove", args.remove, "--force"])
+            print("Warmup: POST /api/embed with a small text input")
+            if not args.warm_only:
+                print_command(build_analyze_command(args, target_path), target_path)
+            return 0
+
+        if not target_path.exists():
+            raise CommandError(f"Target path does not exist: {target_path}")
+        if not target_path.is_dir():
+            raise CommandError(f"Target path is not a directory: {target_path}")
+
+        if not ollama_reachable(host):
+            start_ollama(host, args.verbose)
+
+        ensure_model_exists(args.model, args.verbose)
+        warm_model(host, args.model, args.keep_alive, args.verbose)
+
+        if args.warm_only:
+            return 0
+
+        if args.remove:
+            run_checked(["gitnexus", "remove", args.remove, "--force"], verbose=args.verbose)
+
+        analyze_command = build_analyze_command(args, target_path)
+        try:
+            run_checked(analyze_command, cwd=target_path, verbose=args.verbose)
+        except CommandError:
+            if not args.force:
+                retry = build_analyze_command(argparse.Namespace(**{**vars(args), "force": True}), target_path)
+                print("\nGitNexus analyze failed. If this looks like stale or corrupt index data, retry with:")
+                print_command(retry, target_path)
+            raise
+    except CommandError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main(sys.argv[1:]))

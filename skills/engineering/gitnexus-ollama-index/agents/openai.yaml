@@ -1,0 +1,4 @@
+interface:
+  display_name: "GitNexus Ollama Index"
+  short_description: "Prepare Ollama and index GitNexus embeddings"
+  default_prompt: "Use $gitnexus-ollama-index to warm my Ollama embedding model and index this project with GitNexus embeddings."
