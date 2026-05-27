@@ -12,13 +12,6 @@ routes the LLM calls through the local Claude Code CLI. It is for projects that
 have already been indexed with `npx gitnexus analyze` and where the user wants
 wiki output without configuring a separate API key.
 
-### `gitnexus-ollama-index`
-
-Prepares a local Ollama embedding model, then runs `gitnexus analyze
---embeddings` for a project. Use it when you want to index or reindex a local
-project with embeddings, force rebuild stale or corrupt GitNexus data, or
-explicitly remove and rebuild a registered GitNexus index.
-
 ### `improve-codebase-architecture`
 
 Finds deepening opportunities in a codebase using GitNexus exploration,
@@ -32,6 +25,23 @@ symbol context, and upstream impact before proposing architecture candidates.
 It keeps the recommendations framed in terms of modules, interfaces, seams,
 adapters, depth, leverage, and locality.
 
+### `agent-config`
+
+Installs and maintains shared GitNexus + Context Mode instructions and Claude
+Code hooks. Use it to keep Claude Code and Codex aligned on the same routing
+policy: GitNexus for code intelligence, Context Mode for high-output context
+protection, native tools for edits.
+
+### `orchestrate`
+
+Runs long Claude Code sessions as an Opus-driven orchestrator that delegates
+searches to Haiku sub-agents and implementation / deep-research work to Sonnet
+sub-agents. Keeps the orchestrator's context window compact so the session can
+run for hours without hitting compaction. Use it at the start of any session
+that will involve multi-step work, parallel investigation, planning plus
+implementation, or anything where context bloat would otherwise force an early
+compact. Trigger with `/orchestrate`.
+
 ## Contents
 
 ```text
@@ -42,17 +52,22 @@ skills/
       scripts/
         proxy.py
         run-wiki
-    gitnexus-ollama-index/
-      SKILL.md
-      agents/
-        openai.yaml
-      scripts/
-        gitnexus-ollama-index
     improve-codebase-architecture/
       SKILL.md
       DEEPENING.md
       INTERFACE-DESIGN.md
       LANGUAGE.md
+    agent-config/
+      SKILL.md
+      README.md
+      assets/
+        instructions/
+      hooks/
+        claude/
+      scripts/
+        sync-agent-config.mjs
+    orchestrate/
+      SKILL.md
 ```
 
 ## Install
@@ -70,6 +85,10 @@ For a global install:
 ```bash
 npx skills@latest add juanmlarios/skills -g
 ```
+
+After installing `agent-config`, run its sync script to apply the shared
+instructions and Claude Code hooks. Project-local installs use `./.claude/...`
+from the target project root; global installs use `~/.claude/...`.
 
 ## Usage: `gitnexus-wiki-claude`
 
@@ -119,30 +138,6 @@ request to `claude --print`. The proxy exits when the wiki command completes.
 
 No daemon is left running and no API key is required.
 
-## Usage: `gitnexus-ollama-index`
-
-Run the helper script from the root of the repository you want to index:
-
-```bash
-./.claude/skills/gitnexus-ollama-index/scripts/gitnexus-ollama-index
-```
-
-Common options:
-
-```bash
-./.claude/skills/gitnexus-ollama-index/scripts/gitnexus-ollama-index --force
-./.claude/skills/gitnexus-ollama-index/scripts/gitnexus-ollama-index --name SecureLift-Agents /Users/juan/GitHub/SecureLift-Agents
-./.claude/skills/gitnexus-ollama-index/scripts/gitnexus-ollama-index --remove SecureLift-Agents --force /Users/juan/GitHub/SecureLift-Agents
-```
-
-The helper checks `ollama`, `gitnexus`, and `python3`, starts `ollama serve`
-when needed, verifies `qwen3-embedding:0.6b` is installed, warms the model via
-`/api/embed`, and then runs `gitnexus analyze --embeddings`.
-
-`--remove <target>` is intentionally explicit and runs `gitnexus remove
-<target> --force` before indexing. For ordinary reindexing, use `--force`
-without `--remove`.
-
 ## Usage: `improve-codebase-architecture`
 
 Ask Codex or Claude to use the skill while working in a GitNexus-indexed
@@ -162,3 +157,76 @@ The skill first reads `CONTEXT.md` and relevant ADRs, then uses GitNexus repo
 context, clusters, process traces, symbol context, and impact analysis to build
 an evidence-backed list of architecture candidates. It asks which candidate to
 explore before proposing concrete interfaces.
+
+## Usage: `agent-config`
+
+If you installed the skill into the current project, preview and then apply the
+shared routing policy and Claude Code hook configuration from that project root:
+
+```bash
+node ./.claude/skills/agent-config/scripts/sync-agent-config.mjs --dry-run
+node ./.claude/skills/agent-config/scripts/sync-agent-config.mjs
+```
+
+If you installed the skill globally:
+
+```bash
+node ~/.claude/skills/agent-config/scripts/sync-agent-config.mjs --dry-run
+node ~/.claude/skills/agent-config/scripts/sync-agent-config.mjs
+```
+
+If you are developing directly from this source checkout:
+
+```bash
+node ~/GitHub/skills/skills/engineering/agent-config/scripts/sync-agent-config.mjs --dry-run
+node ~/GitHub/skills/skills/engineering/agent-config/scripts/sync-agent-config.mjs
+```
+
+The script writes generated global instruction files for Claude Code and Codex,
+copies the custom `PreToolUse` dispatcher, and patches Claude Code settings.
+
+Verify the installed configuration:
+
+```bash
+node ./.claude/skills/agent-config/scripts/doctor-agent-config.mjs
+node ~/.claude/skills/agent-config/scripts/doctor-agent-config.mjs
+node ~/GitHub/skills/skills/engineering/agent-config/scripts/doctor-agent-config.mjs
+```
+
+Use the path that matches how you installed the skill. Restart Claude Code after
+hook changes, and start a new Codex session after global instruction changes.
+
+## Usage: `orchestrate`
+
+`orchestrate` is an Opus-driven session pattern. The skill itself is just a
+`SKILL.md` — no scripts, no hooks. It activates when you invoke `/orchestrate`
+in Claude Code (or ask Codex to use the skill by name) at the start of a long
+session.
+
+The pattern, in one line: **Opus drives, Haiku searches, Sonnet implements.**
+
+Once activated, the orchestrating model (you want this to be Opus) will:
+
+- Push searches, file lookups, and "where is X" questions to Haiku sub-agents
+  (typically the `Explore` agent type).
+- Push implementation, multi-file edits, code review, and deep research to
+  Sonnet sub-agents (typically `general-purpose` with `model: "sonnet"`).
+- Keep its own context window lean for orchestration, planning, decisions, and
+  user conversation — letting the session run for hours without compaction.
+
+The skill also codifies the supporting workflow patterns we keep using:
+
+- Plan → Spike → Implement → Review → Commit phasing.
+- Brief sub-agents like a smart colleague who just walked into the room
+  (self-contained prompts with file paths, prior findings, and explicit "write
+  the code, don't just plan" framing when implementation is wanted).
+- Verify-then-summarize after any sub-agent writes code (spot-check the diff,
+  run tests).
+- Authorization gates for commits, pushes, destructive git operations, hook
+  skipping, and production actions.
+- Parallel dispatch — when multiple sub-agents have independent work, send them
+  in one message with multiple `Agent` tool-use blocks.
+
+There is nothing to run. Activate the skill, then describe the work; the
+orchestrating model will set up sub-agents instead of doing the bulk work
+itself.
