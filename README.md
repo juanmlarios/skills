@@ -1,7 +1,7 @@
 # Skills
 
 This repository contains Codex/Claude-compatible skills for GitNexus-assisted
-engineering workflows.
+engineering workflows, plus presentation and design tooling.
 
 ## Skills
 
@@ -42,6 +42,34 @@ that will involve multi-step work, parallel investigation, planning plus
 implementation, or anything where context bloat would otherwise force an early
 compact. Trigger with `/orchestrate`.
 
+### `topolift-slides`
+
+Creates on-brand **TopoLift** [Marp](https://marp.app/) slide decks from a
+single template — there is no theme selection. Use it to build a presentation,
+turn notes or a doc into a TopoLift deck, or restyle an existing deck into the
+brand. Trigger with `/topolift-slides` or phrases like "create slides" /
+"make a deck".
+
+The TopoLift theme is a warm editorial design modelled on
+[topolift.ai](https://topolift.ai/): Spectral serif display with italic rust
+emphasis, IBM Plex Sans body, JetBrains Mono labels, a cream/navy/rust palette,
+and the topology brand mark. It has two modes — light (cream) by default or a
+full-deck dark (navy) treatment via a global `<!-- class: invert -->`.
+
+Every deck the skill produces respects these baked-in layout rules
+(`SKILL.md` → "Critical Layout Rules"):
+
+- **Footer safe zone** — no content (text, image, table, caption) ever overlaps
+  or crowds the bottom footer; a clear bottom margin is always reserved.
+- **Consistent top-header spacing** — content slides are top-aligned so the
+  kicker/heading sits at the same height on every slide (Marp's base theme
+  centers content vertically, which makes short slides drift; only the title
+  slide stays centered).
+- **Optional pinned caption** — a `.cap` line above the wordmark, absolutely
+  positioned so it lands in the exact same spot on every slide.
+- **Full-width body text** — body copy spans edge-to-edge with symmetric
+  left/right margins; only the large serif `.lede` stays intentionally narrow.
+
 ## Contents
 
 ```text
@@ -68,6 +96,12 @@ skills/
         sync-agent-config.mjs
     orchestrate/
       SKILL.md
+  design/
+    topolift-slides/
+      SKILL.md
+      README.md
+      assets/        # template-topolift.md + theme-topolift.css
+      references/    # marp syntax, image patterns, best practices, theme guides
 ```
 
 ## Install
@@ -230,3 +264,29 @@ The skill also codifies the supporting workflow patterns we keep using:
 There is nothing to run. Activate the skill, then describe the work; the
 orchestrating model will set up sub-agents instead of doing the bulk work
 itself.
+
+## Usage: `topolift-slides`
+
+Ask Claude or Codex to build a deck, or trigger with `/topolift-slides`:
+
+```text
+Create a 10-slide TopoLift deck about <topic>.
+```
+
+The skill builds from the single TopoLift template, structures the content, and
+writes a self-contained `.md` with embedded CSS — no external files needed.
+Render it with the Marp CLI:
+
+```bash
+npx @marp-team/marp-cli@latest deck.md --html --pdf --allow-local-files
+```
+
+For the TopoLift brand theme, start a dark deck by adding a global
+`<!-- class: invert -->` directive right after the front-matter (and
+`<!-- _class: lead invert -->` on the title slide). The layout rules — footer
+safe-zone, top-header alignment, optional pinned `.cap` caption, and full-width
+body text — are part of the theme, so every deck inherits them automatically.
+
+When iterating, render PNG probes (`--images png`) and visually verify the
+busiest slides: nothing should touch the footer, and the top header should sit
+at the same height on a short slide and a full one.
