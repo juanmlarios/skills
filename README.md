@@ -42,6 +42,11 @@ that will involve multi-step work, parallel investigation, planning plus
 implementation, or anything where context bloat would otherwise force an early
 compact. Trigger with `/orchestrate`.
 
+### `teach`
+
+Teaches the user a new skill or concept in a workspace, using missions,
+resources, lessons, references, and learning records to keep learning stateful.
+
 ### `topolift-slides`
 
 Creates on-brand **TopoLift** [Marp](https://marp.app/) slide decks from a
@@ -96,6 +101,13 @@ skills/
         sync-agent-config.mjs
     orchestrate/
       SKILL.md
+  productivity/
+    teach/
+      SKILL.md
+      GLOSSARY-FORMAT.md
+      LEARNING-RECORD-FORMAT.md
+      MISSION-FORMAT.md
+      RESOURCES-FORMAT.md
   design/
     topolift-slides/
       SKILL.md
