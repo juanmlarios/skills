@@ -19,6 +19,8 @@ Rules:
 - Keep reads narrow. Persist detailed notes or large output to the assigned artifact.
 - Never edit `workplans/<slug>/PLAN.md`, `RUN.md`, or `DECISIONS.md` unless the contract owns that exact file.
 
+Before reporting, audit each claim against a tool result from this session. Only report work you can point to evidence for; if something is not yet verified, say so explicitly. Report outcomes faithfully: if tests fail, say so with the output; if a step was skipped, say that; when something is done and verified, state it plainly without hedging.
+
 End your final message with exactly:
 
 ```
