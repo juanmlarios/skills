@@ -10,13 +10,17 @@ Write a handoff document summarizing the current conversation so a fresh agent c
 
 ## Default behavior
 
-1. Save a markdown handoff document to a temporary OS directory, not the current workspace.
-2. Include:
+1. If a workplan capsule is active, first write one `RUN.md` checkpoint carrying the exact next action, every live sub-agent, and `Handed off: <ISO timestamp>`; this session's orchestration loop ends there — two sessions driving one capsule is how two "sole writers" collide.
+2. Save the handoff as `~/.claude/handoffs/<YYYY-MM-DD>-<slug>.md` (create the directory if missing; refuse to overwrite an existing file). Not the OS temp directory — macOS reaps it within days and a Friday handoff must survive to Monday. Not the workspace.
+3. Include:
    - Goal / user intent
    - Completed work
    - Current state and important paths/commands
    - Open decisions, blockers, risks
    - Next executable action
+   - Working tree: clean or dirty, with `git diff --stat` and any half-applied change named explicitly
+   - Failing checks: the exact command and its last output, or "none run"
+   - Rejected approaches and stated user preferences, so the successor does not re-propose them
    - Active workplan capsule state when applicable: the authoritative `RUN.md` path and its current status, wave/task, active writer ownership and child run IDs, validation/review state, and exact next action. Link to the capsule instead of restating its plan.
    - Relevant domain skills, kept separate from orchestration selection
    - An **Orchestration continuation** section with:
@@ -24,12 +28,12 @@ Write a handoff document summarizing the current conversation so a fresh agent c
      - `Requested continuation`: `same-equivalent`, an exact skill name, `none/direct`, or `ask-user`
      - `Harness mapping`: Claude `orchestrate`, Codex `codex-orchestrate`, Pi `pi-orchestrate`, unless the user specified different equivalents
      - Any reason, execution constraint, or unresolved choice affecting that selection
-   - Prior-session authorizations that must be reconfirmed, especially commits, pushes, destructive git, production actions, credentials, and live-cost actions
-3. Record the active orchestration accurately; do not infer one merely because work is non-trivial. A session that worked directly records `none/direct` — the next session just continues. Use `ask-user` only when an orchestration choice was genuinely left open.
-4. Do not duplicate content already captured in artifacts (PRDs, plans, ADRs, issues, commits, diffs). Reference by path or URL.
-5. Redact secrets, API keys, passwords, tokens, and unnecessary personal information.
-6. If arguments are provided, treat non-flag text as the next-session focus and tailor the document.
-7. Reply with the handoff markdown path.
+   - Actions this session was authorized for — commits, pushes, destructive git, production actions, credentials, live-cost actions — each written as `NOT authorized until re-granted`; a bare list reads as a grant to the next session
+4. Record the active orchestration accurately; do not infer one merely because work is non-trivial. A session that worked directly records `none/direct` — the next session just continues. Use `ask-user` only when an orchestration choice was genuinely left open.
+5. Do not duplicate content already captured in artifacts (PRDs, plans, ADRs, issues, commits, diffs). Reference by path or URL.
+6. Redact secrets, API keys, passwords, tokens, and unnecessary personal information.
+7. If arguments are provided, treat non-flag text as the next-session focus and tailor the document.
+8. Reply with the handoff markdown path.
 
 No flags means exactly this default behavior: write the markdown only.
 
@@ -42,7 +46,7 @@ Only launch a new session when the user passes `--start` or `--tab`.
 - `--pi`, `--claude-headroom`, and `--codex-headroom` select the launch target directly. `--target <target>` remains a backward-compatible alias.
 - With no target selector, default to `pi`. Reject conflicting selectors before launch.
 - `pi`: launch `pi '/skill:pickup <handoff-path>'`.
-- `claude-headroom`: launch Claude through Headroom: `headroom wrap claude --no-proxy --no-serena --dangerously-skip-permissions '<pickup prompt>'`.
+- `claude-headroom`: launch Claude through Headroom: `headroom wrap claude --no-proxy --no-serena '<pickup prompt>'`. Never add `--dangerously-skip-permissions`: the successor's first input is a file it is told to follow, and the permission gate is the only mechanical check that prior-session authorization does not carry over.
 - `codex-headroom`: launch Codex through Headroom: `headroom wrap codex --no-proxy --no-serena -- '$pickup <handoff-path>'`.
 
 Direct `claude` and `codex` targets are intentionally unsupported. Never bypass the Headroom wrapper for either harness.
@@ -76,7 +80,7 @@ codex_pickup = f"$pickup {shlex.quote(handoff)}"
 if target == "pi":
     argv = [pi, f"/skill:pickup {handoff}"]
 elif target == "claude-headroom":
-    argv = [headroom, "wrap", "claude", "--no-proxy", "--no-serena", "--dangerously-skip-permissions", claude_pickup]
+    argv = [headroom, "wrap", "claude", "--no-proxy", "--no-serena", claude_pickup]
 elif target == "codex-headroom":
     argv = [headroom, "wrap", "codex", "--no-proxy", "--no-serena", "--", codex_pickup]
 else:
@@ -117,29 +121,22 @@ If Warp logs/UI indicate `NotBootstrapped`, wait 2-3 seconds and press Enter aga
 
 ## Optional launch: Warp new tab
 
-Use only for `--tab`:
+Use only for `--tab`. Write `~/.warp/tab_configs/handoff-pickup.toml` with the harness file-write tool (not a shell heredoc or inline python), with `directory` = the current working directory and `commands` = `[CMD]`, both JSON-quoted:
 
-```bash
-python3 - <<'PY'
-import json, os
-from pathlib import Path
-cmd = os.environ["CMD"]
-cwd = os.getcwd()
-Path.home().joinpath(".warp/tab_configs").mkdir(parents=True, exist_ok=True)
-Path.home().joinpath(".warp/tab_configs/handoff-pickup.toml").write_text(f'''name = "Handoff Pickup"
+```toml
+name = "Handoff Pickup"
 title = "Handoff Pickup"
 color = "green"
 
 [[panes]]
 id = "main"
 type = "terminal"
-directory = {json.dumps(cwd)}
-commands = [{json.dumps(cmd)}]
+directory = "<cwd>"
+commands = ["<CMD>"]
 is_focused = true
-''')
-PY
-open 'warp://tab_config/handoff-pickup'
 ```
+
+Then `open 'warp://tab_config/handoff-pickup'`.
 
 ## Fallback
 

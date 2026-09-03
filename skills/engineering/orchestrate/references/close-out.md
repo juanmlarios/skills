@@ -8,7 +8,7 @@ Runs when a wave or a whole workplan is delivered. Turns transient scratch into 
 2. Run the wave's validation contract; confirm real pass output. If the wave touched shared or widely-imported surface, add the broader collection/build/suite — a focused filter alone is not integration evidence. Save large output under `workplans/<slug>/validation/`.
 3. One fresh integrated review (`reviewer`, or `deep-reviewer` at a risky boundary); disposition findings and re-run affected validation.
 4. `AskUserQuestion`: any scope change, deferral, or architecture choice this wave froze? Append each to `DECISIONS.md` as `## D<n> — <choice>` with Context / Decision / Consequences / Alternatives.
-5. Wave commit if authorized (stage wave-owned files by name).
+5. Wave commit only if the user authorized commits in this session (stage wave-owned files by name).
 6. One checkpoint in `RUN.md`: completed tasks collapsed, next wave/task, exact next action. Update the native task list to the next wave.
 7. Start the next wave. **No deletion — the workplan is still active.**
 
@@ -29,17 +29,17 @@ Order matters: decisions and living-doc updates happen *before* the sweep, so no
    DO NOT: touch source, the workplan capsule's state files, or any other workplan.
    ```
 6. **Write `REPORT.md`** in the capsule: delivered scope, changed areas, validation evidence paths, review outcome, deferrals, residual risks, the dedicated feature branch, and its branch-point SHA. This is the workplan's historical record; git history is the implementation record.
-7. **Sweep the workplan folder** (from the 2026-07-20 markdown-cleanup audit — do NOT blanket-delete). In `workplans/<slug>/` keep only the durable core: `STRATEGY.md`, `PLAN.md`, `RUN.md`, `DECISIONS.md`, `REPORT.md`, close-out `VALIDATION`, `research/`, `ip/`. Delete the per-task scratch: `agents/`, `validation/` raw logs, `implementation/`, `review/`, `measurement/`, agent prompts/briefs, data artifacts, `__pycache__`. Delete the whole folder only if nothing durable remains in it.
-   - **Grep before every delete** — mandatory; this check regularly overturns purge verdicts (durable docs and decisions reference into workplan folders):
+7. **Sweep the workplan folder** (from the 2026-07-20 markdown-cleanup audit — do NOT blanket-delete). In `workplans/<slug>/` keep only the durable core: `STRATEGY.md`, `PLAN.md`, `RUN.md`, `DECISIONS.md`, `REPORT.md`. Delete the per-task scratch: `agents/`, `validation/` raw logs, agent prompts/briefs, data artifacts, `__pycache__`. Delete the whole folder only if nothing durable remains in it.
+   - **Grep before every delete** — mandatory; this check regularly overturns purge verdicts (durable docs and decisions reference into workplan folders). Search everywhere *except this capsule's own state files*, which always cite their evidence paths and would block every delete:
      ```bash
-     grep -rn "<path-or-filename>" docs CLAUDE.md AGENTS.md workplans
+     grep -rn "<path-or-filename>" docs CLAUDE.md AGENTS.md $(ls -d workplans/*/ | grep -v "<slug>")
      ```
-     A hit means keep the file, or fold its content into `REPORT.md` first, then delete.
-8. **Junk sweep.** `.DS_Store`, `__pycache__`, stray `.log`/`.pyc`, ` copy.*` files, empty dirs — anywhere the workplan dropped them, plus any stray markdown outside `docs/`.
+     A hit means keep the file, or fold its content into `REPORT.md` first, then delete. `RUN.md`/`REPORT.md` citations of a deleted path are fine — git retains the file.
+8. **Junk sweep**, scoped to `workplans/<slug>/` and the paths this workplan's tasks owned: `.DS_Store`, `__pycache__`, stray `.log`/`.pyc`, ` copy.*` files, empty dirs. Anything outside that scope is someone else's until the user says otherwise.
 9. **Finalize state.** One checkpoint setting `RUN.md` to `Status: complete`, `Current task: none`, `Next action: none`, with the final validation/review evidence paths. Then clear or complete the native task-list entries for this workplan — it is a live view, and a finished workplan must not leave phantom rows behind.
-10. **Final commit** if authorized:
+10. **Final commit** only if the user authorized commits in this session. Stage by name — the reconciled `docs/` files and this capsule's durable core — never a directory (`git add docs/` once swept 1,179 lines of another lane's work into a close-out commit):
     ```bash
-    git add docs/ workplans/
+    git add docs/<reconciled files> workplans/<slug>/{PLAN,RUN,DECISIONS,REPORT}.md
     git commit -m "chore(<slug>): close out — docs reconciled, report written, scratch swept"
     ```
 11. **Leave the feature branch intact.** Do not merge, rebase, push, delete, or switch away implicitly. Report its name and final HEAD after any authorized final commit; each further action needs its own authorization.

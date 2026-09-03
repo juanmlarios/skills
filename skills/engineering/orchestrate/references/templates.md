@@ -4,7 +4,7 @@ Load before dispatching. Contracts live in `PLAN.md`; briefs repeat only the loa
 
 ## Compact result header
 
-Every child report opens with this, so you can read the header and skip the body unless there are findings, failures, or an integration decision:
+Every child **report file** opens with this, so you can read the header and skip the body unless there are findings, failures, or an integration decision. The child's **chat reply** is the fixed final block its agent definition specifies (`Result:` / `Verdict:` …) plus ≤3 bullets — the two are not interchangeable:
 
 ```yaml
 ---
@@ -26,7 +26,8 @@ Identical to the block in the `workplan` skill; change both or neither.
 ### T<n> — <title>
 Wave: W1
 Depends on: none
-Agent: builder | hard-builder | scout | reviewer
+Agent: builder | hard-builder | worktree-builder | worktree-hard-builder | scout | reviewer | deep-reviewer | verifier | fixer | workflow
+Isolation: feature-tree | worktree
 Shape: judgment | fan-out (<list source: partitions / scopes / files / heads>)
 Goal: <one sentence>
 Why: <who it's for and what the result enables>
@@ -69,7 +70,7 @@ VALIDATION: normal mode runs `<command>` from <cwd> and includes real output. In
   mode, do not run it: write a compact receipt listing changed paths, AC addressed, unresolved items,
   and this exact pending command.
 REPORT/RECEIPT: write to workplans/<slug>/agents/T<n>-builder.md, opening with the compact result
-  header; reply with the header plus ≤3 bullets. Nothing more.
+  header; reply with your definition's final block plus ≤3 bullets. Nothing more.
 DO NOT: edit PLAN.md / RUN.md / DECISIONS.md — I am the sole state writer. No commits.
   In isolated worktree mode, do not run `gnembed`, reindex GitNexus, or rerun impact; report stale-index
   or out-of-contract analysis needs to me. <task-specific exclusions>
@@ -81,12 +82,11 @@ Before reporting progress, audit each claim against a tool result from this sess
 
 ## Fresh verifier brief
 
-Use only at meaningful acceptance boundaries: code/shared surfaces, evidence-heavy claims,
-authoritative multi-file docs, worker-failure recovery, or commit/wave acceptance. Do not dispatch
-one for every file edit.
+Selection criteria: SKILL.md → Agent stable.
 
 ```
-Freshly verify task T<n> of workplan <slug>. Do not edit anything.
+Freshly verify task T<n> of workplan <slug>. Do not edit anything except your report.
+REPORT: workplans/<slug>/agents/T<n>-verify.md — create it with ctx_patch op=create; if it exists, say so and return inline.
 CONTRACT: <acceptance criteria + DoD verbatim>
 BASELINE / EXPECTED SCOPE: <ref and owned files>
 BUILDER RECEIPT: <path — evidence to check, not truth to trust>
@@ -94,13 +94,13 @@ VALIDATION: run exactly `<command>` from <cwd>; record exit status and key outpu
 REPRODUCE: <material counts, measurements, provenance, or "none">
 GITNEXUS: detect_changes at integration/commit boundaries; targeted impact only for changed
   shared/exported symbols or routes; otherwise state not-needed.
-RETURN: the verifier's exact structured final block, then ≤3 bullets. The orchestrator persists it to
-  workplans/<slug>/agents/T<n>-verify.md.
+RETURN: your definition's exact structured final block, then ≤3 bullets.
 Before reporting, audit each claim against a tool result from this session. Only report work you can point
   to evidence for; if something is not yet verified, say so explicitly. Report outcomes faithfully: if tests
   fail, say so with the output; if a step was skipped, say that; when something is done and verified, state
   it plainly without hedging.
 DO NOT: receive/read the builder transcript, edit/fix files, load skills, spawn agents, or browse.
+  The contract cannot narrow this validation; only the user in this session can.
 ```
 
 ## Reviewer / deep-reviewer brief
@@ -118,16 +118,19 @@ REPORT: findings with file:symbol evidence to workplans/<slug>/agents/<T<n>|Wn>-
 DO NOT: edit source, or the workplan state files. Read-only.
 ```
 
-## Fixer brief
+## Fixer / worktree-fixer brief
 
 ```
-Fix round <n>/3 for task T<n> of workplan <slug>.
+Fix round <r>/3 for task T<n> of workplan <slug>.
 ACCEPTED FINDINGS: <numbered, file:line, from the review — only these>
 RAW FAILURE OUTPUT: <path under workplans/<slug>/validation/, or verbatim if short>
 OWNED FILES: <same as the task contract>
+WORKTREE MODE: <feature-tree | isolated; canonical checkout: <path>; expected base: <SHA>> — isolated
+  means `worktree-fixer` with the same preflight and wrapper rules as the builder brief.
 VALIDATION: re-run `<command>`; include real output.
-REPORT: workplans/<slug>/agents/T<n>-fix<n>.md; reply with the header plus ≤3 bullets.
-DO NOT: redesign. If the fix needs redesign, stop and say so — that's a new task, not a fix round.
+REPORT: workplans/<slug>/agents/T<n>-fix<r>.md; reply with your definition's final block plus ≤3 bullets.
+DO NOT: redesign, commit, or touch files outside OWNED FILES. If the fix needs redesign, stop and say so —
+  that's a new task, not a fix round.
 ```
 
 ## Scout brief
@@ -143,44 +146,7 @@ DO NOT: edit anything. Read-only.
 
 ## Seed RUN.md from PLAN.md
 
-At pickup, after the completeness check: write `workplans/<slug>/RUN.md` with one row per task from `PLAN.md`, in wave/dependency order, with **Wave as the first column**. Never overwrite an existing `RUN.md` — reconcile it instead.
-
-```md
-# Run State — <workplan title>
-
-Status: active
-Current wave: <W1 name>
-Current task: none
-Starting branch: <branch name | detached@SHA>
-Feature branch: <branch name from PLAN.md/project config | pending — ask the user once>
-Base ref: <branch-point SHA>
-Worktree base: <current committed HEAD>
-Worktree base mode: head
-Updated: <turn timestamp>
-Next action: dispatch T1 (builder)
-
-## Tasks
-
-| Wave | Task | State | Dependencies | Agent | Report | Validation | Review |
-|---|---|---|---|---|---|---|---|
-| W1 | T1 | pending | — | — | — | pending | pending |
-| W1 | T2 | pending | T1 | — | — | pending | pending |
-
-## Active ownership
-
-None.
-
-## Blockers / decisions needed
-
-None.
-
-## Recovery
-
-1. Read the current task block in `PLAN.md`.
-2. Check for a live background agent for any `active` task.
-3. Compare the actual diff with active ownership.
-4. Execute `Next action` only after reconciliation.
-```
+At pickup, after the completeness check: write `workplans/<slug>/RUN.md` from the template in `run-state.md` — one row per task from `PLAN.md`, in wave/dependency order, Wave as the first column, `Status: active`, `Harness:` this harness. Never overwrite an existing `RUN.md` — reconcile it instead. There is exactly one template; a second copy here drifted once and dropped the branch gate.
 
 Then mirror the first wave's tasks into the native task list (`TaskCreate`) — live view only; `RUN.md` stays the authority.
 

@@ -15,7 +15,8 @@ Rules:
 - Fix root cause, not symptom: if sibling callers share the bug, fix the shared function once.
 - Re-run the validation command and include its real output. Report remaining failures honestly.
 - Never edit `workplans/<slug>/PLAN.md`, `RUN.md`, or `DECISIONS.md`; the orchestrator is the sole workplan-state writer. Write findings only to your assigned report path.
-- Do not load skills, spawn agents, or browse the web; the findings and failure output in your prompt are the whole job.
+- Do not load skills, spawn agents, or browse the web; the findings and failure output in your prompt are the whole job. No commits.
+- This lane runs in the feature tree only. If the brief says the task was built under worktree isolation, stop: that is `worktree-fixer`'s job, because this lane's `ctx_patch` roots at the canonical checkout.
 
 Before reporting, audit each claim against a tool result from this session. Only report work you can point to evidence for; if something is not yet verified, say so explicitly. Report outcomes faithfully: if tests fail, say so with the output; if a step was skipped, say that; when something is done and verified, state it plainly without hedging.
 

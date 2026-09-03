@@ -2,7 +2,7 @@
 
 Load when a task is `Shape: fan-out`: the same read-only check over a named list of N similar items (partitions, scopes, files, heads, PRs). Past capsules ran these as N narrative one-off dispatches or inline in the parent — a 28-partition gate sweep produced 121 log files and a hand-written 34 KB report; 8 clean-clone triples became 100 lines of RUN.md. A Workflow script runs the list deterministically, returns typed JSON, and costs the parent one dispatch and one RUN.md row.
 
-Invoking `/orchestrate` is the user's opt-in to the Workflow tool for fan-out tasks. Load the `workflow-authoring` skill before writing a script.
+The Workflow tool's own permission dialog is the opt-in; nothing in this reference or in `/orchestrate` authorizes a run. Load the `workflow-authoring` skill before writing a script.
 
 ## Boundaries
 
@@ -12,7 +12,7 @@ Invoking `/orchestrate` is the user's opt-in to the Workflow tool for fan-out ta
 
 ## Verification of fan-out results
 
-The adversarial refutation stage inside the workflow *is* the verification for a read-only fan-out — do not also dispatch a per-task `verifier`. Dispatch one fresh `verifier` over the aggregated JSON (spot-check k items, reproduce the counts) only when the result feeds a wave commit or a user decision. Log what the script dropped (top-N, sampling, skipped items) so silence never reads as coverage.
+The adversarial refutation stage inside the workflow *is* the verification for a read-only fan-out — do not also dispatch a per-task `verifier`. Dispatch one fresh `verifier` over the aggregated JSON (spot-check k items, reproduce the counts) only when the result feeds a wave commit or a user decision. A dropped item (null return) is a failure of coverage, not an absence of findings: any `dropped > 0` makes the task `fail` in `RUN.md` until the items are re-run. Refute per finding, not per item, and log every all-null verdict — silence must never read as coverage.
 
 ## Shape of a script
 
@@ -31,14 +31,20 @@ const results = await pipeline(
   ITEMS,
   item => agent(`${args.brief}\nITEM: ${item}\nREAD-ONLY. Return the check result.`, { label: `check:${item}`, phase: 'Check', schema: CHECK, effort: 'low' }),
   (r, item) => r && r.findings?.length
-    ? parallel(Array.from({ length: 2 }, () => () =>
-        agent(`Try to refute each finding for ${item}: ${JSON.stringify(r.findings)}. Default refuted=true if uncertain.`, { phase: 'Refute', schema: VERDICT })))
-        .then(vs => ({ ...r, confirmed: vs.filter(Boolean).filter(v => !v.refuted).length >= 1 }))
+    ? pipeline(r.findings, f =>
+        parallel(Array.from({ length: 2 }, () => () =>
+          agent(`Try to refute this finding for ${item}: ${JSON.stringify(f)}. Refute only with a concrete reason; if you cannot, refuted=false.`, { phase: 'Refute', schema: VERDICT })))
+        .then(vs => {
+          const live = vs.filter(Boolean)
+          if (!live.length) log(`refute stage returned no verdicts for ${item}: ${JSON.stringify(f).slice(0, 80)}`)
+          return { ...f, confirmed: live.length > 0 && live.filter(v => !v.refuted).length >= 1, verdicts: live }
+        }))
+      .then(findings => ({ ...r, findings }))
     : r,
 )
 const dropped = results.filter(r => !r).length
-if (dropped) log(`${dropped} of ${ITEMS.length} items returned null`)
-return { items: ITEMS.length, dropped, results: results.filter(Boolean) }
+if (dropped) log(`${dropped} of ${ITEMS.length} items returned null — coverage incomplete`)
+return { status: dropped ? 'fail' : 'pass', items: ITEMS.length, dropped, results: results.filter(Boolean) }
 ```
 
 Pass the list and the brief via `args`; timestamps too (`Date.now()` is unavailable). Default to `pipeline()`; use `parallel()` only when a later stage needs all prior results at once (dedup, early exit).

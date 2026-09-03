@@ -21,7 +21,7 @@ The worktree base is the feature branch's committed `HEAD` (user settings pin `w
 
 ## Agent lanes and preflight
 
-Use `worktree-builder` / `worktree-hard-builder` — never the MCP-based feature-tree builders under isolation. The brief carries the canonical checkout path and the expected base SHA. The child's only unwrapped repository Bash is the preflight:
+Use `worktree-builder` / `worktree-hard-builder` for builds and `worktree-fixer` for fix rounds — never the MCP-based feature-tree lanes (`builder`, `fixer`) under isolation; their `ctx_patch` roots at the canonical checkout. The brief carries the canonical checkout path and the expected base SHA. The child's only unwrapped repository Bash is the preflight:
 
 ```
 pwd; git rev-parse --show-toplevel; git rev-parse --git-dir; git rev-parse HEAD
@@ -33,4 +33,4 @@ Temporary isolated children never run `gnembed`, reindex GitNexus, or rerun impa
 
 ## Integration
 
-Before applying a child's work: the parent still names the recorded feature branch; the child's `git rev-parse HEAD` / merge-base descends from `B`. Then diff-apply only the intended owned change onto the feature tree — never wholesale-copy files. A branch or base mismatch is stale-base drift: stop and reconcile; never merge or rerun from another branch implicitly. A branch that outlives its squash-merge produces false conflicts — delete merged worktree branches at wave close when authorized.
+Before applying a child's work: the parent still names the recorded feature branch; the child's `git rev-parse HEAD` / merge-base descends from `B`. Then diff-apply only the intended owned change onto the feature tree — never wholesale-copy files. A branch or base mismatch is stale-base drift: stop and reconcile; never merge or rerun from another branch implicitly. A branch that outlives its squash-merge produces false conflicts — delete merged worktree branches at wave close only when the user authorizes it in this session.

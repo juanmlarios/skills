@@ -55,18 +55,19 @@ No empty directories, no report scaffolding, no task-board objects. Do not dupli
 4. **Record decomposition decisions** — append qualifying merge, serialization, ownership, sequencing, or validation decisions to `DECISIONS.md` as Context / Decision / Consequences / Alternatives.
 5. **Decompose** — waves of sub-agent-sized tasks with self-contained contracts. Mark each task's **Shape**: `judgment` (one builder, one contract) or `fan-out` (the same read-only check over a named list of N items — partitions, scopes, files, heads; `/orchestrate` runs these through the Workflow tool, so name the list source and the per-item check). Include only repository hot rules applicable to the task unless the repository requires verbatim inclusion. One writer per file per wave; merge or serialize overlapping ownership.
 6. **Write `PLAN.md`** — objective, constraints, waves, task contracts, risks, open questions; enough for `/orchestrate` to launch cold.
-7. **Initialize or refine `RUN.md`** — shape and field names come from `~/.claude/skills/orchestrate/references/run-state.md`; the two skills share one contract. For a new capsule: `Status: planned`, one compact row per task with **Wave as the first column**, the starting wave, and the exact next action. Record `Starting branch` and `Base ref` when available. `Feature branch` is a capsule field the project or its coordinator may assign: record it if known, otherwise `pending` — `/orchestrate` asks the user once if it is still absent. `/workplan` never creates or switches branches.
+7. **Initialize or refine `RUN.md`** — shape and field names come from the orchestrate skill's `references/run-state.md` (installed beside this skill: `../orchestrate/references/run-state.md`); the two skills share one contract. For a new capsule: `Status: planned`, `Harness:` = the harness that will execute it (agent names, report paths, and fields are harness-specific), `Handed off: none`, one compact row per task with **Wave as the first column**, the starting wave, and the exact next action. Record `Starting branch` and `Base ref` when available. `Feature branch` is a capsule field the project or its coordinator may assign: record it if known, otherwise `pending` — `/orchestrate` asks the user once if it is still absent. `/workplan` never creates or switches branches.
 8. **Verify Done means, then stop.**
 
 ## Task contract (in `PLAN.md`, one per task)
 
-Identical to the block in `~/.claude/skills/orchestrate/references/templates.md`; change both or neither.
+Identical to the block in the orchestrate skill's `references/templates.md` (`../orchestrate/references/templates.md`); change both or neither. The "compact result header" a report opens with is `status / changed / validation / findings / next`; the chat reply is the agent definition's fixed final block.
 
 ```md
 ### T<n> — <title>
 Wave: W1
 Depends on: none
-Agent: builder | hard-builder | scout | reviewer
+Agent: builder | hard-builder | worktree-builder | worktree-hard-builder | scout | reviewer | deep-reviewer | verifier | fixer | workflow
+Isolation: feature-tree | worktree
 Shape: judgment | fan-out (<list source: partitions / scopes / files / heads>)
 Goal: <one sentence>
 Why: <who it's for and what the result enables>
@@ -85,12 +86,13 @@ Report-back: compact result header + ≤3 bullets
 Artifact format: prose-header | raw-exact
 ```
 
-`PLAN.md` around the contracts: `# <title>`, `## Objective`, `## Constraints and non-goals`, `## Waves` (`- W1: T1, T2` / `- W2: T3 (depends on T1, T2)`), `## Validation contracts`, `## Risks and open questions`, then the task blocks.
+`PLAN.md` around the contracts: `# <title>`, `Harness: <claude | pi | codex>`, `## Objective`, `## Constraints and non-goals`, `## Waves` (`- W1: T1, T2` / `- W2: T3 (depends on T1, T2)`), `## Validation contracts` (one executable command per wave — what proves the wave as a whole, not the union of task filters; `/orchestrate` runs it at wave close), `## Risks and open questions`, then the task blocks.
 
 ## Done means
 
 - Capsule paths resolved safely; only the allowed capsule files changed; no `RUN.md` implicitly overwritten.
-- Every task has explicit dependencies, a Shape, a Why, applicable hot rules and opening-checklist guardrails, disjoint or serialized file ownership, AC, DoD, and a validation command that can fail (no bare existence checks).
+- Every task has explicit dependencies, a Shape, an Isolation (worktree only when two writers must run at once and the project meets the worktree prerequisites), a Why, applicable hot rules and opening-checklist guardrails, disjoint or serialized file ownership, AC, DoD, and a validation command that can fail (no bare existence checks).
+- Every wave has its own validation contract under `## Validation contracts`.
 - Every path cited in a contract exists on disk now, or is named rather than pathed ("a diff report under this task's agents directory"); the project's `test_capsule_paths_exist` passes if it has one.
 - Impact evidence is present where warranted; caller/shared-symbol overlap is resolved by merging or sequencing.
 - Existing helpers/modules to reuse are named; each task has a unique report path, a report-back cap, and an artifact format.

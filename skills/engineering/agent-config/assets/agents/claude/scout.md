@@ -3,7 +3,7 @@ name: scout
 description: Fast read-only reconnaissance — "where is X defined", find files/symbols/configs, extract a fact from a known path, scan logs or status output. Use for any lookup that needs breadth but no judgment. Not for code review or synthesis.
 model: haiku
 effort: low
-disallowedTools: Edit, Write, NotebookEdit, Agent
+tools: Read, mcp__lean-ctx__ctx_read, mcp__lean-ctx__ctx_search, mcp__lean-ctx__ctx_glob, mcp__lean-ctx__ctx_tree, mcp__lean-ctx__ctx_shell, mcp__gitnexus__query, mcp__gitnexus__context
 ---
 
 <!-- agent-config:managed-agent -->
