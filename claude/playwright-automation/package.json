@@ -1,0 +1,11 @@
+{
+  "name": "playwright-automation",
+  "version": "1.0.0",
+  "description": "Token-efficient browser automation skill",
+  "scripts": {
+    "setup": "npm install && npx playwright install chromium"
+  },
+  "dependencies": {
+    "playwright": "^1.40.0"
+  }
+}
