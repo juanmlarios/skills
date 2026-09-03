@@ -4,12 +4,22 @@ description: Compact the current conversation into a handoff document for anothe
 argument-hint: "What will the next session be used for?"
 ---
 
-Write a handoff document summarising the current conversation so a fresh agent can continue the work. Save to the temporary directory of the user's OS - not the current workspace.
+Write a compact handoff document in the user's OS temporary directory, not the workspace. Use a unique temporary filename and refuse to overwrite an existing file; choose a new filename on collision. If arguments are supplied, treat them as the next session's focus.
 
-Include a "suggested skills" section in the document, which suggests skills that the agent should invoke.
+## Handoff schema
 
-Do not duplicate content already captured in other artifacts (PRDs, plans, ADRs, issues, commits, diffs). Reference them by path or URL instead.
+Include only what a fresh agent needs:
 
-Redact any sensitive information, such as API keys, passwords, or personally identifiable information.
+- **Objective and why** — intended outcome and who or what it enables.
+- **Scope** — completed, remaining, and explicitly excluded work.
+- **Decisions** — made decisions and the reasons or authority behind them.
+- **Verified state** — current facts grounded in an artifact, command result, or source path.
+- **Validation** — commands run and their results.
+- **Blockers** — exact evidence, owner/decision needed, and retry condition.
+- **Next action** — one concrete, ordered action.
+- **Artifacts** — path or URL references for plans, ADRs, issues, commits, diffs, and outputs; do not duplicate their content.
+- **Suggested skills** — only skills relevant to the next action.
 
-If the user passed arguments, treat them as a description of what the next session will focus on and tailor the doc accordingly.
+Redact secrets, credentials, personal data, and sensitive values; identify a redaction by type when it affects continuation. Keep the document short enough to scan (normally no more than one page); link to artifacts instead of expanding them. If evidence is absent, say so rather than inferring it.
+
+Report back with the handoff file path only.

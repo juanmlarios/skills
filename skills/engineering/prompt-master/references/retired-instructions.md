@@ -4,8 +4,8 @@ Check every line of an existing prompt against this list. Match: remove it, or r
 
 | # | If the prompt says | Do this | Source |
 |---|---|---|---|
-| 1 | "Double-check your answer", "re-verify before responding" | Delete. Claude 5 verifies on its own; the line causes re-verification. | OPUS5, Self-correction |
-| 2 | "Include a final verification step", "use a subagent to verify" | Delete. | OPUS5, Task scope |
+| 1 | "Double-check your answer", "re-verify before responding" | Delete generic rechecking. Replace it with a specific test, artifact inspection, or command only when that evidence is relevant. | OPUS5, Self-correction |
+| 2 | "Include a final verification step", "use a subagent to verify" | Delete routine verification choreography; retain concrete security, migration, test, or artifact checks that protect the operation. | OPUS5, Task scope |
 | 3 | "Think step by step", "reason carefully before answering" | Delete. Thinking is adaptive on Claude 5. | BEST, Thinking |
 | 4 | "CRITICAL:", "You MUST", all-caps emphasis | Rewrite in normal language: "Use [tool] when..." | BEST, Tool usage |
 | 5 | "If in doubt, use [tool]", "default to using [tool]" | Rewrite: "Use [tool] when it would improve your understanding of the problem." | BEST, Overthinking |

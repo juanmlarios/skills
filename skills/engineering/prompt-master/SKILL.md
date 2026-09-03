@@ -5,58 +5,30 @@ description: The one skill for prompting the Claude 5 models the way Anthropic s
 
 # Prompt Master
 
-Turns what the user wants into a prompt, brief or instruction file written the way Anthropic says to prompt the Claude 5 generation. Always begins by asking. The rulebook with sources is `references/rulebook.md`; read it once per session, then work from the steps.
+Turn a complete user request into a prompt, brief, or instruction-file revision for Claude 5 models. Read `references/rulebook.md` and only the operation-specific references needed for the request.
 
-## Steps
+## Operation
 
-Track progress:
+Read the supplied prompt, files, and context before asking. Ask one question at a time only for a material gap that could change the result; when the input is complete, draft directly.
 
-```
-Task Progress:
-- [ ] 1. Interview
-- [ ] 2. Strip what is retired
-- [ ] 3. Rebuild as a Full Job Brief (or audit the file)
-- [ ] 4. Rules to reasons
-- [ ] 5. Deliver with receipts
-```
+For an existing prompt or instruction, use `references/retired-instructions.md` to remove obsolete scaffolding while preserving concrete safeguards. Rebuild or revise using the Full Job Brief where useful: **job**, **why**, **guardrails**, and **done-means**. A short task does not need all four sections.
 
-### 1. Interview
-Read what the user gave you first (the pasted prompt, the file, the folder). Then interview one question at a time following `references/interview.md`: never ask what you could read, prioritise questions whose answer changes the shape of the prompt, stop at 7. Skip to a single confirming question when the ask is already small and clear. By the end you know the input type (rough idea, existing prompt, or whole instruction file), the surface (Claude Cowork, Claude app, Claude Code, API), the run length (quick answer or long run), who the output is for, and what done looks like.
+For a whole instruction file, produce the review table from `references/file-audit.md` and obtain approval before editing. Preserve the file-edit approval boundary. For prompts, return one copyable block and up to five source-backed change notes; for file audits, return the review table, bucket counts, and line reduction.
 
-### 2. Strip what is retired
-For an existing prompt or file, check every line against `references/retired-instructions.md`; remove or replace what matches and record each change for step 5. For a rough idea, skip this step.
+## Validation and guardrails
 
-### 3. Rebuild as a Full Job Brief, or audit the file
-- **Rough idea or existing prompt:** write it in the four-part shape from `references/job-brief.md` (job, why, guardrails, done-means). For a long run, append the audit line verbatim from that file. Drop any part the task does not need; a three-line prompt is right for a three-line task.
-- **Whole instruction file (CLAUDE.md, skill, project instructions):** run the bucket audit in `references/file-audit.md`, produce the three-column review table, and wait for approval before editing anything.
+Remove wasteful generic rechecking such as “double-check everything,” but retain or add concrete evidence appropriate to the operation: targeted tests, security checks, migration/rollback checks, artifact inspection, or command output. Keep hard rules where mistakes are expensive and explain their reason. Prefer clear positive instructions over blanket prohibitions.
 
-### 4. Rules to reasons
-Re-read the draft or the proposed rewrites. Any hard rule without a reason gets the reason or gets cut, using `references/rules-to-reasons.md`. Keep hard rules only where being wrong is expensive. Say what to do instead of what not to do.
+Do not autonomously modify this skill or its references, and do not store examples automatically. Change standing instructions or examples only when the user explicitly asks. Keep scope, deliverable size, and report-back proportionate to the job.
 
-### 5. Deliver with receipts
-For a prompt: one copyable block, then a change log of at most five bullets, each naming the rule applied and its Anthropic source, taken from the source column of the reference file that drove the change (`rulebook.md` for the brief, `retired-instructions.md` for removals). For a file audit: the review table, counts per bucket, and the line reduction; apply on approval. If the user wants a standing voice or format, add the one-line install note for their surface from `references/voice-and-format.md`. Nothing else.
+## References
 
-## Human checkpoints
-- Interview answers are the first checkpoint; play the brief back in one paragraph before writing if the task is large.
-- File audits never edit before the user approves the review table.
-- If the user asks for options, give 3 to 5 variants that each differ in one dimension (tighter scope, longer run, different audience, terser report-back, different surface) and let them pick.
-
-## Self-improvement
-This skill is never finished. Improve it as you use it.
-- When the user corrects how a step was done, update the relevant reference file (or this SKILL.md) so the correction sticks. Do not just fix it for this run.
-- When a correction is a hard rule, add it here as a permanent rule with its reason.
-- When the user says a prompt or audit was genuinely good, save the input and output to `references/examples/` as a model for future runs.
-- When Anthropic updates the Opus 5, Fable 5 or best practices pages, update `references/rulebook.md` and re-check `references/retired-instructions.md` before changing anything else.
-- Keep the skill small while doing this: when you add something, cut anything that no longer changes behavior.
-
-## Routing
-| Step | Reference |
+| Need | Reference |
 |------|-----------|
-| All steps, once per session | `references/rulebook.md` |
-| 1. Interview | `references/interview.md` |
-| 2. Strip what is retired | `references/retired-instructions.md` |
-| 3. Rebuild (prompt) | `references/job-brief.md` |
-| 3. Audit (whole file) | `references/file-audit.md` |
-| 4. Rules to reasons | `references/rules-to-reasons.md` |
-| 5. Standing voice or format | `references/voice-and-format.md` |
-| 3. Rebuild, when the input is an existing prompt: skim before drafting | `references/examples/client-report-rewrite.md` |
+| General principles | `references/rulebook.md` |
+| Material interview gaps | `references/interview.md` |
+| Retiring obsolete instructions | `references/retired-instructions.md` |
+| Full Job Brief | `references/job-brief.md` |
+| Whole-file audit | `references/file-audit.md` |
+| Rule rationale | `references/rules-to-reasons.md` |
+| Standing voice or format | `references/voice-and-format.md` |

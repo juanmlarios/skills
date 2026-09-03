@@ -18,7 +18,7 @@ Sources (short names used below):
 
 ## Part 2. The unlearning
 
-4. **Stop telling it to double-check.** Claude 5 verifies its own work; verification lines cause over-verification and cost tokens with no quality gain. Source: OPUS5, "Task scope and over-verification" and "Self-correction."
+4. **Replace generic rechecking with concrete evidence.** Remove blanket “double-check everything” instructions, but keep targeted tests, security checks, migration/rollback checks, and artifact or command evidence when the operation needs them. Source: OPUS5, "Task scope and over-verification" and "Self-correction."
 5. **Swap rules for reasons.** A bare rule gets ignored or overfitted; a rule with its reason generalises. Source: CTXENG, reversal one ("Give Claude rules" to "Let Claude use judgement"); BEST, "Add context to improve performance" (the ellipses example).
 
 ## Part 3. The guardrails

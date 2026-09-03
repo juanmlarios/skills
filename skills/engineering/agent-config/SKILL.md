@@ -5,69 +5,30 @@ description: Install and maintain reusable GitNexus + Context Mode agent instruc
 
 # Agent Config
 
-Use this skill when the user wants reusable agent setup across projects and tools.
+Maintain reusable GitNexus and Context Mode instructions and hooks from this version-controlled source. Generated global files are outputs, so editing them loses changes on the next sync.
 
-## Purpose
+## Source and generated ownership
 
-This skill packages global agent policy and hook configuration so the same GitNexus + Context Mode routing can be reused from one version-controlled location.
+- Edit policy in `assets/instructions/` and hook behavior in `hooks/claude/`; do not edit generated files under `$HOME/.claude`, `$HOME/.codex`, or `$HOME/.agent-instructions`.
+- Keep shared policy in `assets/instructions/shared-routing.md`, tool-specific policy in its matching source file, and managed hook behavior in `hooks/claude/gitnexus-context-mode-dispatcher.cjs`.
+- Sync replaces only managed marker blocks. Preserve those markers and local unmanaged notes so future syncs remain safe.
 
-It is not itself a Claude/Codex plugin. It is a local configuration kit:
+## Read-only help
 
-- source instruction files
-- Claude Code hook assets
-- sync/install scripts
-- docs explaining why the split exists
+For explain, inspect, or status requests, read `references/overview.md` and the relevant source or generated files, then report how the package, targets, and managed markers relate. Do not run preview, sync, or doctor unless the user explicitly requests an installation or update.
 
-## Workflow
+## Installation or update workflow
 
-1. Read `references/overview.md` for the conceptual model.
-2. Edit source files under `assets/instructions/` or `hooks/claude/`.
-3. Run `scripts/sync-agent-config.mjs` to generate local global instruction files and hook files.
-4. Restart Claude Code or Codex when hook/global instruction loading needs a fresh session.
-
-## Installed Targets
-
-The sync script writes:
-
-- `/Users/juan/.agent-instructions/context-gitnexus-routing.md`
-- `/Users/juan/.claude/CLAUDE.md`
-- `/Users/juan/.codex/AGENTS.md`
-- `/Users/juan/.claude/hooks/gitnexus/gitnexus-context-mode-dispatcher.cjs`
-
-It also patches `/Users/juan/.claude/settings.json` to enable:
-
-- custom `PreToolUse` dispatcher
-- GitNexus `PostToolUse` freshness hook
-- Context Mode `SessionStart`
-- Context Mode `PreCompact`
-- Context Mode `UserPromptSubmit`
-
-## Commands
-
-From this skill directory:
-
-```bash
-node scripts/sync-agent-config.mjs
-```
-
-Dry run:
+When the user explicitly requests an installation or update, read `references/overview.md` when the split or targets matter. Then make the source change and use this evidence-backed sequence:
 
 ```bash
 node scripts/sync-agent-config.mjs --dry-run
-```
-
-Verify:
-
-```bash
+node scripts/sync-agent-config.mjs
 node scripts/doctor-agent-config.mjs
 ```
 
-## Editing Rules
+The preview identifies intended managed changes; sync applies them; doctor confirms the installed files, managed markers, and hooks agree with source. Report the changed source paths plus the concise preview/sync/doctor result. Restart Claude Code or Codex only when a fresh session is needed to load changed global instructions or hooks.
 
-- Edit the source files in this skill, not generated files in `~/.claude`, `~/.codex`, or `~/.agent-instructions`.
-- Keep shared policy in `assets/instructions/shared-routing.md`.
-- Keep Claude-specific guidance in `assets/instructions/claude.md`.
-- Keep Codex-specific guidance in `assets/instructions/codex.md`.
-- Keep hook behavior in `hooks/claude/gitnexus-context-mode-dispatcher.cjs`.
+## Installed targets
 
-Generated files contain marker blocks so future syncs can replace managed sections without deleting local unmanaged notes.
+The sync script manages `$HOME/.agent-instructions/context-gitnexus-routing.md`, `$HOME/.claude/CLAUDE.md`, `$HOME/.codex/AGENTS.md`, `$HOME/.claude/hooks/gitnexus/gitnexus-context-mode-dispatcher.cjs`, and managed settings in `$HOME/.claude/settings.json` for the dispatcher, GitNexus freshness, and Context Mode lifecycle hooks.

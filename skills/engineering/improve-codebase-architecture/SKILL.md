@@ -28,59 +28,23 @@ Key principles (see [LANGUAGE.md](LANGUAGE.md) for the full list):
 
 This skill is _informed_ by the project's domain model. The domain language gives names to good seams; ADRs record decisions the skill should not re-litigate.
 
-## Process
+## Investigation
 
-### 1. Explore
+Read relevant `CONTEXT.md` vocabulary and ADRs before interpreting the architecture; they name the domain and record decisions this review must respect. Use GitNexus as a map, making only the calls needed to follow the user's concern or a credible lead. Confirm repository context and freshness when relevant, query domain terms or flows, and use clusters, process, symbol-context, or impact evidence only when it helps establish cohesion, flow, or blast radius.
 
-Read the project's domain glossary and any ADRs in the area you're touching first.
+GitNexus is not the authority. Before presenting a candidate, read the source and relevant tests for its current **Interface**, invariants, error modes, callers, and **Adapters**. Ground every candidate in both source paths and concrete exploration evidence. Apply the **deletion test**: if deletion merely moves complexity across callers, the module was earning its keep; if it removes pass-through complexity, it may be **shallow**.
 
-Then use GitNexus as the primary exploration path. Start with the indexed repo context and refresh the index if GitNexus reports it is stale:
+Investigate follow-up only when the initial evidence leaves a material question that could change the candidate. Use parallel help only when it materially improves independent review, and give it the evidence and ADR constraints already found.
 
-1. Discover the indexed repo name with `gitnexus://repos`.
-2. Read `gitnexus://repo/{name}/context` to confirm freshness and get the codebase overview.
-3. If stale or missing, run `npx gitnexus analyze` from the project root, then read the context again.
-4. Read `gitnexus://repo/{name}/clusters` to identify functional areas and cohesion signals.
-5. Use `gitnexus_query` with domain terms from `CONTEXT.md`, ADR subjects, and the user's prompt to find related execution flows.
-6. For promising flows, read `gitnexus://repo/{name}/process/{processName}` and use `gitnexus_context` on key symbols to inspect callers, callees, and neighboring modules.
-7. For likely refactors, use `gitnexus_impact` upstream on the current module or proposed seam to understand blast radius before recommending it.
+## Present candidates
 
-GitNexus is a map, not the final authority. Read the source files for every candidate before presenting it, especially the current interface, invariants, error modes, tests, and adapters.
+Start with the strongest 3–5 source-verified **deepening opportunities**, fewer when evidence supports fewer. For each include:
 
-Don't follow rigid heuristics — explore organically and note where GitNexus evidence plus source reading shows friction:
+- **Files and evidence** — source paths plus relevant GitNexus cluster, process, symbol, or impact facts.
+- **Problem** — the observed friction in terms of **Module**, **Interface**, **Depth**, **Seam**, **Locality**, or **Leverage**.
+- **Direction** — a plain-English change, without prematurely prescribing an interface.
+- **Test effect** — how the Interface becomes a more useful test surface.
 
-- Where does understanding one concept require bouncing between many small modules?
-- Where are modules **shallow** — interface nearly as complex as the implementation?
-- Where have pure functions been extracted just for testability, but the real bugs hide in how they're called (no **locality**)?
-- Where do tightly-coupled modules leak across their seams?
-- Which parts of the codebase are untested, or hard to test through their current interface?
+Use `CONTEXT.md` vocabulary for the domain and [LANGUAGE.md](LANGUAGE.md) vocabulary for architecture. Surface an ADR conflict only when source-backed friction warrants reconsidering it, and label it clearly.
 
-Apply the **deletion test** to anything you suspect is shallow: would deleting it concentrate complexity, or just move it? A "yes, concentrates" is the signal you want.
-
-Use sub-agents only after the GitNexus pass, and only when parallel review would materially help. Brief them with the GitNexus evidence already gathered: cluster names, process names, key symbols, files, caller/callee context, and ADR constraints. Do not ask sub-agents to rediscover the whole codebase from scratch.
-
-### 2. Present candidates
-
-Present a numbered list of deepening opportunities. For each candidate:
-
-- **Files** — which files/modules are involved
-- **GitNexus evidence** — cluster, process, symbol, and impact facts that justify looking here
-- **Problem** — why the current architecture is causing friction
-- **Solution** — plain English description of what would change
-- **Benefits** — explained in terms of locality and leverage, and also in how tests would improve
-
-**Use CONTEXT.md vocabulary for the domain, and [LANGUAGE.md](LANGUAGE.md) vocabulary for the architecture.** If `CONTEXT.md` defines "Order," talk about "the Order intake module" — not "the FooBarHandler," and not "the Order service."
-
-**ADR conflicts**: if a candidate contradicts an existing ADR, only surface it when the friction is real enough to warrant revisiting the ADR. Mark it clearly (e.g. _"contradicts ADR-0007 — but worth reopening because…"_). Don't list every theoretical refactor an ADR forbids.
-
-Do NOT propose interfaces yet. Ask the user: "Which of these would you like to explore?"
-
-### 3. Grilling loop
-
-Once the user picks a candidate, drop into a grilling conversation. Walk the design tree with them — constraints, dependencies, the shape of the deepened module, what sits behind the seam, what tests survive.
-
-Side effects happen inline as decisions crystallize:
-
-- **Naming a deepened module after a concept not in `CONTEXT.md`?** Add the term to `CONTEXT.md` — see [CONTEXT-FORMAT.md](CONTEXT-FORMAT.md). Create the file lazily if it doesn't exist.
-- **Sharpening a fuzzy term during the conversation?** Update `CONTEXT.md` right there.
-- **User rejects the candidate with a load-bearing reason?** Offer an ADR, framed as: _"Want me to record this as an ADR so future architecture reviews don't re-suggest it?"_ Only offer when the reason would actually be needed by a future explorer to avoid re-suggesting the same thing — skip ephemeral reasons ("not worth it right now") and self-evident ones. See [ADR-FORMAT.md](ADR-FORMAT.md).
-- **Want to explore alternative interfaces for the deepened module?** See [INTERFACE-DESIGN.md](INTERFACE-DESIGN.md).
+Ask which candidate the user wants to explore only when that selection would materially change the requested result; otherwise complete the supplied scope. Do not edit source, `CONTEXT.md`, or ADRs as a side effect of analysis; propose documentation changes only with user approval. Stop before implementation unless the user explicitly requests it.
