@@ -13,7 +13,7 @@ When both are active, overlapping hooks can waste time or produce less targeted 
 
 Plugins provide capabilities: MCP tools, hooks, skills, or app integrations.
 
-This package does not replace the GitNexus or Context Mode plugins. It coordinates them:
+This package also versions the custom Claude and Pi subagent definitions under `assets/agents/` and installs them into their canonical user-scoped directories. It does not replace the GitNexus or Context Mode plugins; it coordinates them:
 
 - GitNexus plugin/MCP remains the code intelligence layer.
 - Context Mode plugin/MCP remains the context-budget layer.
@@ -24,7 +24,7 @@ This package does not replace the GitNexus or Context Mode plugins. It coordinat
 Skills are reusable instructions plus assets/scripts. This package is stored as a skill because it is a repeatable operational workflow:
 
 - explain the routing model
-- install shared global instructions
+- install shared global instructions and custom agents
 - install hook assets
 - patch Claude Code settings safely
 - sync updates across machines or projects

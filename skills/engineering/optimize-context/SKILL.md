@@ -37,10 +37,10 @@ Facts in always-loaded files that rot: symbol/relationship counts, port numbers,
 - Pi: `.recovery-*` litter in `pi-hermes-memory/` (consolidator crashes); stale entries in MEMORY.md/USER.md naming removed tools.
 
 ### 7. Skill usage (WARN)
-Cross-reference the skill inventory (all locations above) against session history (`~/.claude/history.jsonl`, `~/.codex/session_index.jsonl`) for last-invoked dates. Never-used in 60 days → delete candidate. Also: same skill duplicated across locations without symlinks; skills referencing deleted skills or dead paths.
+Cross-reference the skill inventory (all locations above) against session history (`~/.claude/history.jsonl`, `~/.codex/session_index.jsonl`) for last-invoked dates. Never-used in 60 days → delete candidate. Also: the same skill installed in several locations with content drift between copies (installs are copies by policy — compare content, not link-ness); skills referencing deleted skills or dead paths.
 
 ### 8. Friction ledger
-Read `~/GitHub/workplans/_context-friction.md` (orchestrate/workplan retros append denied-tool events, dead paths, contradictory-rule hits there). Summarize entries since the last report and map each to one of the checks above — recurring friction with no failing check means a check is missing; propose it.
+Read `~/GitHub/workplans/_context-friction.md` if it exists (a ledger of denied-tool events, dead paths, and contradictory-rule hits; anyone may append to it — the orchestration skills do not write it automatically). Summarize entries since the last report and map each to one of the checks above — recurring friction with no failing check means a check is missing; propose it.
 
 ## Output
 

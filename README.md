@@ -27,10 +27,9 @@ adapters, depth, leverage, and locality.
 
 ### `agent-config`
 
-Installs and maintains shared GitNexus + Context Mode instructions and Claude
-Code hooks. Use it to keep Claude Code and Codex aligned on the same routing
-policy: GitNexus for code intelligence, Context Mode for high-output context
-protection, native tools for edits.
+Installs and maintains custom Claude/Pi agents, shared GitNexus + Context Mode
+instructions, and Claude Code hooks. Use it to keep agent roles and routing
+policy reproducible across machines.
 
 ### `orchestrate`
 
@@ -94,6 +93,7 @@ skills/
       SKILL.md
       README.md
       assets/
+        agents/       # Claude and Pi custom agent definitions
         instructions/
       hooks/
         claude/
@@ -132,8 +132,8 @@ For a global install:
 npx skills@latest add juanmlarios/skills -g
 ```
 
-After installing `agent-config`, run its sync script to apply the shared
-instructions and Claude Code hooks. Project-local installs use `./.claude/...`
+After installing `agent-config`, run its sync script to install the Claude/Pi
+agents, shared instructions, and Claude Code hooks. Project-local installs use `./.claude/...`
 from the target project root; global installs use `~/.claude/...`.
 
 ## Usage: `gitnexus-wiki-claude`
@@ -228,8 +228,10 @@ node ~/GitHub/skills/skills/engineering/agent-config/scripts/sync-agent-config.m
 node ~/GitHub/skills/skills/engineering/agent-config/scripts/sync-agent-config.mjs
 ```
 
-The script writes generated global instruction files for Claude Code and Codex,
-copies the custom `PreToolUse` dispatcher, and patches Claude Code settings.
+The script installs Claude agents in `~/.claude/agents/`, Pi agents in
+`~/.pi/agent/agents/`, writes global instruction files, copies the custom
+`PreToolUse` dispatcher, and patches Claude Code settings. It refuses to replace
+same-named unmanaged agents unless you explicitly add `--force-agents`.
 
 Verify the installed configuration:
 

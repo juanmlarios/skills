@@ -126,8 +126,8 @@ frequency_weight, preservation_claim, recommendation}], profile_notes[]}`.
 
 Every reviewer prompt includes: repo path, its file scope, the dimensions above, the config's
 corpus-scale facts and hot-paths list, the profile top-N (if available), READ-ONLY, "cite
-file:line and quote the loop/expression; fewer well-evidenced findings over volume", and the
-tier rules verbatim.
+file:line and quote the loop/expression for every finding; report everything you can evidence —
+severity and the verifier pass filter afterwards", and the tier rules verbatim.
 
 If the repo has a code graph (GitNexus indexed), reviewers may use `query`/`context` to find
 callers and hot paths — but frequency claims still cite the config's hot-paths list or the

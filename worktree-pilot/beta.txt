@@ -1,2 +1,0 @@
-writer=beta
-issue=SEC-39

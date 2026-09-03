@@ -61,7 +61,7 @@ First the freshness gate, then the gate commands from the config plus the loaded
 The user invoking this skill is the multi-agent opt-in. Pattern — pipeline, no barrier between review and verify:
 
 - One `agent()` per scope from the config, with structured output: `{scope_summary, findings[{file, line, title, severity, dimension, detail, recommendation, standard: "<rule # violated, or 'new-class'>"}], standards_suggestions[]}`.
-- Every reviewer prompt includes: repo path, its file scope, the pack file(s) to read, "read <standards doc> and cite the rule number each finding violates", the repo's existing enforcement (don't re-report what a linter/contract already gates unless violated), READ-ONLY, "cite file:line evidence; fewer well-evidenced findings over volume", and any extra dimensions from the config.
+- Every reviewer prompt includes: repo path, its file scope, the pack file(s) to read, "read <standards doc> and cite the rule number each finding violates", the repo's existing enforcement (don't re-report what a linter/contract already gates unless violated), READ-ONLY, "cite file:line evidence for every finding; report everything you can evidence — severity and the verifier pass filter afterwards", and any extra dimensions from the config.
 - Pipe each scope's high findings (cap ~6/scope) into adversarial verifiers: "Try to REFUTE this by reading the code — cited lines, callers, tests, framework wiring." Include the config's false-positive traps verbatim. Schema: `{real, adjusted_severity, note}`.
 
 Universal verifier traps (add the config's on top): decorator/entry-point registration means zero static callers ≠ dead; staged work may be registered in workplans; "eager connection" claims usually ignore lazy clients.

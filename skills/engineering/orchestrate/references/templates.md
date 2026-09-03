@@ -20,23 +20,29 @@ next: parent action or none
 
 `/workplan` authors these; `/orchestrate` executes them without re-deriving anything.
 
+Identical to the block in the `workplan` skill; change both or neither.
+
 ```md
 ### T<n> — <title>
-Wave: <e.g. "Wave A — correctness">
-Depends on: <T1, T2 | none>
-Agent: builder | hard-builder
+Wave: W1
+Depends on: none
+Agent: builder | hard-builder | scout | reviewer
+Shape: judgment | fan-out (<list source: partitions / scopes / files / heads>)
 Goal: <one sentence>
-Scope: <what to build/change>
-Non-goals: <explicitly out>
-Owned files: <exact paths this task may touch>
-Context: <paths, symbols, decisions, artifact links — self-contained>
-Impact: <blast radius / affected callers, from the decomposition pass>
+Why: <who it's for and what the result enables>
+Scope: <exact work>
+Non-goals: <explicit exclusions>
+Owned files: <exact paths>
+Context: <symbols, decisions, existing helpers to reuse — cite symbols, never line numbers>
+Impact: <when warranted: risk, direct callers/processes, affected files/tests>
 AC:
 - <criterion>
 DoD:
 - <item>
-Validation: `<command>` in <cwd> — proves <what>; real failure looks like <what>
-Report: workplans/<slug>/agents/T<n>-builder.md
+Validation: `<command>` in `<cwd>` — proves <behavior>; failure looks like <signal>
+Report: `workplans/<slug>/agents/T<n>-<role>.md`
+Report-back: compact result header + ≤3 bullets
+Artifact format: prose-header | raw-exact
 ```
 
 ## Builder / hard-builder brief (Agent prompt)
@@ -44,33 +50,33 @@ Report: workplans/<slug>/agents/T<n>-builder.md
 ```
 Task T<n> of workplan <slug> — contract: workplans/<slug>/PLAN.md#T<n>.
 
-GOAL: <goal + why it matters to the workplan>
-ALREADY KNOWN: <findings, ruled-out approaches, decisions made>
+GOAL: <goal>
+WHY: <who it's for and what the result enables>
+ALREADY KNOWN: <findings, ruled-out approaches, decisions made; symbols, not line numbers — resolve your own anchors>
 OWNED FILES: <paths — touch nothing else>
 CONTRACT: <acceptance criteria + DoD verbatim>
 IMPACT (approved): <blast radius from the contract — do NOT re-run impact for these symbols.
   If you need an out-of-contract shared/exported symbol, STOP and report; I amend the contract.>
 FEATURE BRANCH: <recorded feature branch>. EXPECTED WORKTREE BASE: <exact committed SHA>.
-WORKTREE MODE: <feature-tree | isolated; canonical checkout: <absolute parent git root>>. In isolated
-  mode use `worktree-builder` / `worktree-hard-builder`, never the MCP-based feature-tree variants.
-  Before any repository read or edit, run `pwd; git rev-parse --show-toplevel;
-  git rev-parse --git-dir; git rev-parse HEAD`; require cwd/top-level to be the assigned worktree,
-  not the canonical checkout, and HEAD to equal the expected worktree base. That preflight is
-  the only unwrapped repository Bash allowed. Thereafter invoke the wrapper from that cwd for
-  every repository operation: `$HOME/.local/bin/lean-ctx-worktree read <file>`,
-  `$HOME/.local/bin/lean-ctx-worktree grep <pattern>`, or
-  `$HOME/.local/bin/lean-ctx-worktree -c '<shell/test/build/git command>'`. Use native
-  Edit/Write for mutations. On mismatch, wrapper failure, configured lean-ctx MCP use, or direct
-  repository Bash after preflight, stop blocked without further edits; never fall back.
+WORKTREE MODE: <feature-tree | isolated; canonical checkout: <absolute parent git root>>. Isolated mode:
+  preflight `pwd; git rev-parse --show-toplevel; git rev-parse --git-dir; git rev-parse HEAD` must show the
+  assigned worktree (not the canonical checkout) and HEAD == expected base; that is the only unwrapped
+  repository Bash. Every later repository operation goes through `$HOME/.local/bin/lean-ctx-worktree`
+  (`read <file>` / `grep <pattern>` / `-c '<command>'`); native Edit/Write for mutations. Any mismatch,
+  wrapper failure, lean-ctx MCP use, or unwrapped repository Bash after preflight: stop blocked, never fall back.
 VERIFICATION MODE: <normal | FRESH VERIFICATION REQUIRED>.
 VALIDATION: normal mode runs `<command>` from <cwd> and includes real output. In fresh-verification
   mode, do not run it: write a compact receipt listing changed paths, AC addressed, unresolved items,
   and this exact pending command.
 REPORT/RECEIPT: write to workplans/<slug>/agents/T<n>-builder.md, opening with the compact result
-  header; return a ≤15-line summary.
+  header; reply with the header plus ≤3 bullets. Nothing more.
 DO NOT: edit PLAN.md / RUN.md / DECISIONS.md — I am the sole state writer. No commits.
   In isolated worktree mode, do not run `gnembed`, reindex GitNexus, or rerun impact; report stale-index
   or out-of-contract analysis needs to me. <task-specific exclusions>
+Before reporting progress, audit each claim against a tool result from this session. Only report work you
+  can point to evidence for; if something is not yet verified, say so explicitly. Report outcomes faithfully:
+  if tests fail, say so with the output; if a step was skipped, say that; when something is done and verified,
+  state it plainly without hedging.
 ```
 
 ## Fresh verifier brief
@@ -88,8 +94,12 @@ VALIDATION: run exactly `<command>` from <cwd>; record exit status and key outpu
 REPRODUCE: <material counts, measurements, provenance, or "none">
 GITNEXUS: detect_changes at integration/commit boundaries; targeted impact only for changed
   shared/exported symbols or routes; otherwise state not-needed.
-RETURN: the verifier's exact structured final block. The orchestrator persists it to
+RETURN: the verifier's exact structured final block, then ≤3 bullets. The orchestrator persists it to
   workplans/<slug>/agents/T<n>-verify.md.
+Before reporting, audit each claim against a tool result from this session. Only report work you can point
+  to evidence for; if something is not yet verified, say so explicitly. Report outcomes faithfully: if tests
+  fail, say so with the output; if a step was skipped, say that; when something is done and verified, state
+  it plainly without hedging.
 DO NOT: receive/read the builder transcript, edit/fix files, load skills, spawn agents, or browse.
 ```
 
@@ -101,8 +111,10 @@ DIFF: <git ref range or files changed>
 CONTRACT: <acceptance criteria + DoD verbatim, from PLAN.md#T<n>>
 VALIDATION: <command that was supposed to pass> — evidence at <validation path>
 CHECK: correctness, regressions, scope creep beyond owned files, validation quality, project standards.
-REPORT: findings with file:line evidence to workplans/<slug>/agents/<T<n>|Wn>-review.md,
-  compact result header first. State "no findings" with evidence when clean.
+  Report everything you find; I filter by severity afterwards.
+REPORT: findings with file:symbol evidence to workplans/<slug>/agents/<T<n>|Wn>-review.md,
+  compact result header first. State "no findings" with evidence when clean. Reply with the header
+  plus ≤3 bullets.
 DO NOT: edit source, or the workplan state files. Read-only.
 ```
 
@@ -114,7 +126,7 @@ ACCEPTED FINDINGS: <numbered, file:line, from the review — only these>
 RAW FAILURE OUTPUT: <path under workplans/<slug>/validation/, or verbatim if short>
 OWNED FILES: <same as the task contract>
 VALIDATION: re-run `<command>`; include real output.
-REPORT: workplans/<slug>/agents/T<n>-fix<n>.md
+REPORT: workplans/<slug>/agents/T<n>-fix<n>.md; reply with the header plus ≤3 bullets.
 DO NOT: redesign. If the fix needs redesign, stop and say so — that's a new task, not a fix round.
 ```
 
@@ -140,7 +152,7 @@ Status: active
 Current wave: <W1 name>
 Current task: none
 Starting branch: <branch name | detached@SHA>
-Feature branch: <workplan/slug>
+Feature branch: <branch name from PLAN.md/project config | pending — ask the user once>
 Base ref: <branch-point SHA>
 Worktree base: <current committed HEAD>
 Worktree base mode: head

@@ -1,6 +1,6 @@
 # Agent Config
 
-Reusable GitNexus + Context Mode configuration for Claude Code and Codex.
+Reusable custom agents and GitNexus + Context Mode configuration for Claude Code, Pi, and Codex.
 
 This package exists because GitNexus and Context Mode are both useful, but they should not compete for the same investigation step.
 
@@ -12,13 +12,15 @@ The package stores the policy, hook dispatcher, and install/sync script in one v
 ## What It Installs
 
 ```text
-/Users/juan/.agent-instructions/context-gitnexus-routing.md
-/Users/juan/.claude/CLAUDE.md
-/Users/juan/.codex/AGENTS.md
-/Users/juan/.claude/hooks/gitnexus/gitnexus-context-mode-dispatcher.cjs
+$HOME/.claude/agents/*.md
+$HOME/.pi/agent/agents/*.md
+$HOME/.agent-instructions/context-gitnexus-routing.md
+$HOME/.claude/CLAUDE.md
+$HOME/.codex/AGENTS.md
+$HOME/.claude/hooks/gitnexus/gitnexus-context-mode-dispatcher.cjs
 ```
 
-It also patches `/Users/juan/.claude/settings.json` to enable:
+It also patches `$HOME/.claude/settings.json` to enable:
 
 - custom `PreToolUse` dispatcher
 - GitNexus `PostToolUse` freshness check
@@ -52,7 +54,13 @@ Preview changes:
 node scripts/sync-agent-config.mjs --dry-run
 ```
 
-Restart Claude Code after hook changes. Start a new Codex session after global instruction changes.
+Existing same-named agent files without the managed marker are preserved. Review them, then explicitly adopt them when intended:
+
+```bash
+node scripts/sync-agent-config.mjs --force-agents
+```
+
+Restart Claude Code or Pi after agent changes. Start a new Codex session after global instruction changes.
 
 ## Verify
 

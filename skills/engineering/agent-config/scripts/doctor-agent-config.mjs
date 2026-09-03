@@ -1,9 +1,13 @@
 #!/usr/bin/env node
 
-import { existsSync, lstatSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { existsSync, lstatSync, readFileSync, readdirSync } from 'node:fs';
+import { homedir } from 'node:os';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const home = process.env.HOME || '/Users/juan';
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const skillDir = resolve(__dirname, '..');
+const home = process.env.HOME || homedir();
 
 const paths = {
   shared: join(home, '.agent-instructions/context-gitnexus-routing.md'),
@@ -15,6 +19,10 @@ const paths = {
   codexConfig: join(home, '.codex/config.toml'),
   dispatcher: join(home, '.claude/hooks/gitnexus/gitnexus-context-mode-dispatcher.cjs'),
   claudeDesktop: join(home, 'Library/Application Support/Claude/claude_desktop_config.json'),
+  claudeAgentSource: join(skillDir, 'assets/agents/claude'),
+  piAgentSource: join(skillDir, 'assets/agents/pi'),
+  claudeAgents: join(home, '.claude/agents'),
+  piAgents: join(home, '.pi/agent/agents'),
 };
 
 function ok(label, detail = '') {
@@ -47,9 +55,26 @@ function checkFile(path, label) {
   ok(label, `${path}${st.isSymbolicLink() ? ' (symlink)' : ''}`);
 }
 
+function checkAgents(label, sourceDir, targetDir) {
+  const names = readdirSync(sourceDir).filter((name) => name.endsWith('.md')).sort();
+  for (const name of names) {
+    const sourcePath = join(sourceDir, name);
+    const targetPath = join(targetDir, name);
+    if (!existsSync(targetPath)) {
+      fail(`${label} agent ${name}`, 'missing');
+    } else if (read(sourcePath) !== read(targetPath)) {
+      fail(`${label} agent ${name}`, 'differs from managed source');
+    } else {
+      ok(`${label} agent ${name}`);
+    }
+  }
+}
+
 checkFile(paths.shared, 'shared routing file');
 checkFile(paths.claudeInstructions, 'Claude instructions file');
 checkFile(paths.codexInstructions, 'Codex instructions file');
+checkAgents('Claude', paths.claudeAgentSource, paths.claudeAgents);
+checkAgents('Pi', paths.piAgentSource, paths.piAgents);
 
 if (has(paths.claudeInstructions, 'GitNexus + Context Mode Routing')) {
   ok('Claude instructions contain shared routing');

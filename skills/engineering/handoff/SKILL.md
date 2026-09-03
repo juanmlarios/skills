@@ -17,7 +17,7 @@ Write a handoff document summarizing the current conversation so a fresh agent c
    - Current state and important paths/commands
    - Open decisions, blockers, risks
    - Next executable action
-   - Active workplan capsule state (RUN.md, PARKED.md) when applicable
+   - Active workplan capsule state when applicable: the authoritative `RUN.md` path and its current status, wave/task, active writer ownership and child run IDs, validation/review state, and exact next action. Link to the capsule instead of restating its plan.
    - Relevant domain skills, kept separate from orchestration selection
    - An **Orchestration continuation** section with:
      - `Previous/current orchestration skill`: the orchestration used in this session, or `none/direct`
@@ -25,7 +25,7 @@ Write a handoff document summarizing the current conversation so a fresh agent c
      - `Harness mapping`: Claude `orchestrate`, Codex `codex-orchestrate`, Pi `pi-orchestrate`, unless the user specified different equivalents
      - Any reason, execution constraint, or unresolved choice affecting that selection
    - Prior-session authorizations that must be reconfirmed, especially commits, pushes, destructive git, production actions, credentials, and live-cost actions
-3. Record the active orchestration accurately; do not infer one merely because work is non-trivial. If no continuation approach was chosen, use `ask-user`.
+3. Record the active orchestration accurately; do not infer one merely because work is non-trivial. A session that worked directly records `none/direct` — the next session just continues. Use `ask-user` only when an orchestration choice was genuinely left open.
 4. Do not duplicate content already captured in artifacts (PRDs, plans, ADRs, issues, commits, diffs). Reference by path or URL.
 5. Redact secrets, API keys, passwords, tokens, and unnecessary personal information.
 6. If arguments are provided, treat non-flag text as the next-session focus and tailor the document.

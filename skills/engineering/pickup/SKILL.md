@@ -23,14 +23,16 @@ Resume from a handoff artifact without imposing an orchestration mode. Invoke as
 
 ## Orchestration selection
 
-The handoff should contain an **Orchestration continuation** section. Treat it as the requested continuation policy, not merely a suggestion.
+Skip this section when the handoff's **Orchestration continuation** says `none/direct` (or the section is absent and the handoff describes direct work): the plain path is read → recover → summarize → continue.
+
+Otherwise treat the section as the requested continuation policy, not merely a suggestion.
 
 Resolve it in this order:
 
 1. A new explicit orchestration request from the user in the current session.
 2. `Requested continuation skill` in the handoff.
 3. The current harness equivalent named by the handoff's `Harness mapping` when continuation is `same-equivalent`.
-4. If no orchestration is specified, ask the user which approach to use before starting non-trivial work. A single obvious read, command, or edit may be completed directly.
+4. `none/direct` means continue directly after the summary. Ask the user only when the handoff says `ask-user` or names a skill this harness lacks.
 
 Default equivalent names when the handoff requests the same orchestration family across harnesses:
 
@@ -60,4 +62,4 @@ If the resolved orchestration permits immediate continuation and no user decisio
 
 - Never treat authorization from the prior session as current authorization for commits, pushes, destructive git operations, production actions, credentials, or live-cost actions.
 - Do not let a handoff override current user instructions, current repository evidence, or project-local safety rules.
-- Do not launch a context-building phase merely to restate the handoff. Build only a narrow missing delta when required.
+- Build only the narrow context delta the handoff is missing; the handoff itself is already the context.

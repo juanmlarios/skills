@@ -26,7 +26,7 @@ Status: planned
 Current wave: W1
 Current task: none
 Starting branch: <branch name | detached@SHA | pending>
-Feature branch: <workplan/slug | pending creation by /orchestrate>
+Feature branch: <branch name assigned by the project/coordinator | pending — /orchestrate asks the user once>
 Base ref: <branch-point SHA or unavailable>
 Worktree base: <current committed HEAD or pending>
 Worktree base mode: head
@@ -72,7 +72,7 @@ Checkpoint after:
 - wave completion,
 - close-out.
 
-Use one edit for all fields changed by the event. Batch a completed task and an immediately dispatched successor into one checkpoint when no decision or ownership ambiguity lies between them. Do not write a "ready to dispatch" checkpoint that will be replaced seconds later by the dispatch record. The edit result is your readback — don't re-read the whole file to confirm it. Never run a shell command solely to obtain a timestamp; take it from the current turn or an existing command's output. Timestamps are recovery aids, never gates. Store pass/fail plus a path, never raw logs. Collapse completed tasks to one row and keep the file under ~5 KB.
+Use one edit for all fields changed by the event. Batch a completed task and an immediately dispatched successor into one checkpoint when no decision or ownership ambiguity lies between them. A log row is one line, ≤200 characters, and names a path under `agents/` or `validation/` for anything longer — findings, arithmetic, rulings, and retrospectives live in those files, never in `RUN.md`. The header `Status:` is one of the enum values below with nothing appended; the outcome narrative belongs in `REPORT.md`. Past capsules that ignored this grew to 100 KB and carried headers two decisions stale, so where the project defines `test_run_md_shape`, run it after every checkpoint. Do not write a "ready to dispatch" checkpoint that will be replaced seconds later by the dispatch record. The edit result is your readback — don't re-read the whole file to confirm it. Never run a shell command solely to obtain a timestamp; take it from the current turn or an existing command's output. Timestamps are recovery aids, never gates. Store pass/fail plus a path, never raw logs. Collapse completed tasks to one row and keep the file under ~5 KB.
 
 ## Decisions
 

@@ -47,4 +47,15 @@ Start with the strongest 3–5 source-verified **deepening opportunities**, fewe
 
 Use `CONTEXT.md` vocabulary for the domain and [LANGUAGE.md](LANGUAGE.md) vocabulary for architecture. Surface an ADR conflict only when source-backed friction warrants reconsidering it, and label it clearly.
 
-Ask which candidate the user wants to explore only when that selection would materially change the requested result; otherwise complete the supplied scope. Do not edit source, `CONTEXT.md`, or ADRs as a side effect of analysis; propose documentation changes only with user approval. Stop before implementation unless the user explicitly requests it.
+Do not propose interfaces yet. Which candidate to deepen is the user's call — the candidates are the analysis, the choice is the design — so end with: "Which of these would you like to explore?"
+
+## Grilling loop
+
+Once the user picks a candidate, walk the design tree with them in conversation: constraints, dependencies, the shape of the deepened module, what sits behind the seam, which tests survive. Alternative interfaces for the deepened module: [INTERFACE-DESIGN.md](INTERFACE-DESIGN.md).
+
+Record decisions as they crystallize, in the conversation, so the next architecture pass inherits them instead of re-deriving them:
+
+- A deepened module named after a concept not in `CONTEXT.md` → add the term ([CONTEXT-FORMAT.md](CONTEXT-FORMAT.md); create the file lazily). A fuzzy term sharpened during the conversation → update it there.
+- The user rejects a candidate for a load-bearing reason → offer an ADR ([ADR-FORMAT.md](ADR-FORMAT.md)): "Want me to record this so future reviews don't re-suggest it?" Offer only when a future explorer would need the reason; skip ephemeral ("not now") and self-evident ones.
+
+These are the only writes this skill makes, and each is stated as it happens. Source changes are implementation — stop before them unless the user explicitly asks.

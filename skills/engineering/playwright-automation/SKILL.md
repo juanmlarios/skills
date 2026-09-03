@@ -16,32 +16,32 @@ description: Token-efficient browser automation for data extraction, scraping, a
 - Repetitive tasks
 - Production automation
 
-**Use dev-browser for:**
+**Use an interactive browser tool (Claude in Chrome, or a dev-browser skill if installed) for:**
 - Exploring unknown pages (need snapshots)
 - One-off visual debugging
 - Interactive discovery
 
 ## Quick Commands
 
+Scripts live in the installed skill directory (`~/.claude/skills/playwright-automation/`, or the project-local `.claude/skills/...`); run `./setup.sh` there once to install Playwright.
+
 ### Extract Data
 ```bash
-cd skills/playwright-automation && node extract.js <url> <selector>
+cd ~/.claude/skills/playwright-automation && node extract.js <url> <selector>
 ```
 
-### Scrape Articles
+### Scrape a Page
 ```bash
-cd skills/playwright-automation && node scrape-articles.js <url>
+cd ~/.claude/skills/playwright-automation && node scrape-page.js <url>
 ```
 
 ### Check Page Status
 ```bash
-cd skills/playwright-automation && node check-status.js <url>
+cd ~/.claude/skills/playwright-automation && node check-status.js <url>
 ```
 
-### Run Custom Script
-```bash
-cd skills/playwright-automation && node run.js <your-script.js>
-```
+### Custom Script
+Write the script to a file (e.g. under the OS temp dir) and run it with `node <file> <url>` from the skill directory so `require('playwright')` resolves. Inline `node <<'EOF'` heredocs are blocked by the shell allowlist in lean-ctx sessions; the patterns below are file contents, not commands to paste.
 
 ## Common Patterns
 

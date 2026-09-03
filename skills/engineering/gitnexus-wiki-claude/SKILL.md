@@ -6,34 +6,65 @@ description: Regenerate or refresh a project's gitnexus wiki using the user's
   wiki", "regenerate the auto-wiki", or asks to update the auto-generated
   wiki after refactors. Works in any repository that has been indexed with
   `npx gitnexus analyze`.
+disable-model-invocation: true
 ---
 
 # gitnexus-wiki-claude skill
 
-Regenerate the upstream GitNexus wiki while routing its OpenAI-compatible provider requests through the user's local `claude` CLI. This uses the user's existing Claude Code authentication rather than an API key.
+Re-runs the upstream `gitnexus wiki` generator but routes its LLM calls through the local `claude` CLI, so it uses the user's existing Claude Code authentication instead of an API-key-billed provider.
 
-## Preconditions and invocation
+## How it works
 
-Work from the project root. Confirm the repository is indexed (`.gitnexus/` exists when walking upward) and that `claude`, `npx`, and `python3` are on `PATH`; otherwise stop with the missing prerequisite.
+1. `scripts/run-wiki` starts a small OpenAI-compatible HTTP proxy on a random localhost port.
+2. It runs `npx gitnexus wiki --provider openai --base-url http://127.0.0.1:<port>/v1 --api-key dummy-claude-routed --model <model>`.
+3. Each chat-completion request becomes one `claude --print` subprocess call.
+4. The proxy exits when the wiki finishes. No daemon, no persistent process, no API key.
 
-Resolve `run-wiki` from the executable project-local path first, then the executable global path. Its first argument is always the model, so require an explicit model before any flags:
+GitNexus always writes the canonical wiki to `.gitnexus/wiki/` (the `index.html` viewer relies on it). `--out <dir>` / `--out-dir <dir>` is a copy-after-generation step, not a redirect.
+
+## Prerequisites
+
+Check before invoking; stop and name the missing piece otherwise:
+
+- cwd is inside a GitNexus-indexed repo (`.gitnexus/` exists walking upward). If not, tell the user to run `npx gitnexus analyze` first.
+- `claude`, `npx`, and `python3` are on `PATH`.
+
+## Invocation
+
+Run from the project root. Resolve the helper in this order: `./.claude/skills/gitnexus-wiki-claude/scripts/run-wiki` (project-local install) if executable, else `~/.claude/skills/gitnexus-wiki-claude/scripts/run-wiki` (global install), else stop and tell the user to install the skill.
+
+The first positional argument is the model and defaults to `sonnet`; flags follow it. Anything not recognised is forwarded to `npx gitnexus wiki`.
 
 ```bash
-./.claude/skills/gitnexus-wiki-claude/scripts/run-wiki sonnet [--force] [--out dir]
-# or
-~/.claude/skills/gitnexus-wiki-claude/scripts/run-wiki sonnet [--force] [--out dir]
+run-wiki                              # sonnet, output at .gitnexus/wiki/
+run-wiki haiku                        # faster
+run-wiki opus                         # deeper prose
+run-wiki haiku --force                # force full regeneration
+run-wiki haiku --out docs/wiki        # also copy the result to docs/wiki/
+run-wiki haiku --out docs/wiki --force --verbose
 ```
 
-The helper starts a temporary localhost OpenAI-compatible proxy and invokes `npx gitnexus wiki` with `--provider openai` through that local compatible proxy; each completion is served by one `claude --print` call. It is not an OpenAI account or API-key provider, and the proxy exits with the command.
+`--out` overwrites the destination, so it needs a destination the user actually named: refuse the repository root, `.git`, `.gitnexus/wiki`, or any ancestor of those. A new directory under the project root that the user supplied needs no further confirmation; replacing an existing one that the user did not name in this session does.
 
-GitNexus always generates the canonical wiki in `.gitnexus/wiki/`. `--out <dir>`/`--out-dir <dir>` copies that result after generation; it is not a redirect. Before invoking the helper, require an exact `--out` destination explicitly supplied by the user, resolve it, and obtain explicit authorization before it can be replaced. Reject the repository root, `.git`, `.gitnexus/wiki`, any ancestor of those paths, and any destination not explicitly supplied by the user. A new, explicitly supplied destination under the project root needs no extra replacement confirmation. Forward other arguments to `npx gitnexus wiki`.
+## Reading output
 
-## Evidence and done
+The helper forwards `gitnexus wiki` stdout. Watch for:
 
-Success requires a successful helper exit, GitNexus generation output without module errors, and the expected `.gitnexus/wiki/` output (plus the authorized `--out` copy, if requested). Report the output path(s) and exit/result evidence.
+- **An API-key prompt.** `--api-key dummy-claude-routed` should suppress it; if it appears anyway, the proxy is not being detected — stop and investigate rather than typing a key.
+- **Timing.** A small repo (~20 modules) takes 2–4 minutes; most calls take 5–15 s via `claude --print`.
+- **Failures.** GitNexus prints the module name plus an error. The proxy log is `/tmp/claude-proxy.log`.
 
-On failure, preserve the command error and affected module if shown; inspect `/tmp/claude-proxy.log` when proxy diagnostics are needed. Stop rather than claiming a partial wiki is complete.
+Done means: the helper exited 0, generation output shows no module errors, `.gitnexus/wiki/` is populated (plus the `--out` copy if requested). Report the output path(s) and the exit evidence. A partial wiki is not done — say what failed.
 
-## Boundaries
+## When NOT to use this skill
 
-Use a different tool when the user wants the verifier-first wiki or a hand-edit to one page. Do not use this path for an unindexed repository. The proxy supports the system/user request shape GitNexus uses for wiki generation; streaming is not supported and displayed token counts are estimates.
+- The user wants the verifier-first wiki (github.com/juanmlarios/gitnexus-wiki) — different tool, different output.
+- The user wants to hand-edit one wiki page — use Edit.
+- The repo isn't indexed — `npx gitnexus analyze` first.
+- The user already has an API key configured for `gitnexus wiki` and prefers it — don't insist.
+
+## Caveats
+
+- The proxy collapses OpenAI multi-turn `messages[]` into one tagged `claude --print` prompt. GitNexus only sends system+user pairs, so nothing is lost in practice.
+- Streaming is not supported (GitNexus doesn't need it). Token counts in proxy responses are estimates (chars/4), so progress bars are approximate.
+- Per-call latency is bounded by `claude --print` startup (~1–2 s) plus generation; there is no batching.

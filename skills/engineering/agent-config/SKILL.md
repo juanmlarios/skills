@@ -1,6 +1,6 @@
 ---
 name: agent-config
-description: Install and maintain reusable GitNexus + Context Mode agent instructions and Claude Code hooks across Claude Code and Codex. Use when setting up shared agent routing, syncing global AGENTS.md or CLAUDE.md files, configuring PreToolUse dispatch between GitNexus and Context Mode, or explaining how this local config package relates to skills and plugins.
+description: Install and maintain reusable Claude and Pi subagents, GitNexus + Context Mode instructions, and Claude Code hooks. Use when syncing custom agents, global AGENTS.md or CLAUDE.md files, shared routing, or Claude hook configuration across machines.
 ---
 
 # Agent Config
@@ -9,9 +9,9 @@ Maintain reusable GitNexus and Context Mode instructions and hooks from this ver
 
 ## Source and generated ownership
 
-- Edit policy in `assets/instructions/` and hook behavior in `hooks/claude/`; do not edit generated files under `$HOME/.claude`, `$HOME/.codex`, or `$HOME/.agent-instructions`.
+- Edit policy in `assets/instructions/`, agent definitions in `assets/agents/{claude,pi}/`, and hook behavior in `hooks/claude/`; installed files under `$HOME` are generated outputs.
 - Keep shared policy in `assets/instructions/shared-routing.md`, tool-specific policy in its matching source file, and managed hook behavior in `hooks/claude/gitnexus-context-mode-dispatcher.cjs`.
-- Sync replaces only managed marker blocks. Preserve those markers and local unmanaged notes so future syncs remain safe.
+- Sync replaces managed marker blocks and managed agent files. It refuses to overwrite an unmanaged agent filename unless the user explicitly reruns it with `--force-agents`.
 
 ## Read-only help
 
@@ -27,8 +27,8 @@ node scripts/sync-agent-config.mjs
 node scripts/doctor-agent-config.mjs
 ```
 
-The preview identifies intended managed changes; sync applies them; doctor confirms the installed files, managed markers, and hooks agree with source. Report the changed source paths plus the concise preview/sync/doctor result. Restart Claude Code or Codex only when a fresh session is needed to load changed global instructions or hooks.
+The preview identifies intended managed changes; sync applies them; doctor confirms installed instructions, agents, markers, and hooks agree with source. If existing agent filenames are unmanaged, stop and ask before using `--force-agents` to adopt them. Restart Claude Code, Pi, or Codex when a fresh session is needed to load changes.
 
 ## Installed targets
 
-The sync script manages `$HOME/.agent-instructions/context-gitnexus-routing.md`, `$HOME/.claude/CLAUDE.md`, `$HOME/.codex/AGENTS.md`, `$HOME/.claude/hooks/gitnexus/gitnexus-context-mode-dispatcher.cjs`, and managed settings in `$HOME/.claude/settings.json` for the dispatcher, GitNexus freshness, and Context Mode lifecycle hooks.
+The sync script installs Claude agents to `$HOME/.claude/agents/`, Pi agents to `$HOME/.pi/agent/agents/`, and manages the existing instruction, dispatcher, and Claude settings targets.
