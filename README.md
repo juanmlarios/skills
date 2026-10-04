@@ -46,6 +46,21 @@ compact. Trigger with `/orchestrate`.
 Teaches the user a new skill or concept in a workspace, using missions,
 resources, lessons, references, and learning records to keep learning stateful.
 
+### `presentation-workshop`
+
+Collaborates with a presenter to agree the audience and outcome, organise the
+story, and refine content one question or a small batch of slides at a time.
+After approval, it builds an editable PowerPoint from the bundled **Teal
+Editorial** POTX, with native layouts, square bullets, speaker notes,
+references, and a shared footer.
+
+The skill is self-contained: template assets, a Python builder, tests, and
+setup documentation live under
+[`skills/design/presentation-workshop/`](skills/design/presentation-workshop/README.md).
+It does not require the original Presentations checkout. Trigger by asking to
+use `presentation-workshop`; in Pi, use `/skill:presentation-workshop` after
+installation/discovery. Planning-only work is supported.
+
 ### `topolift-slides`
 
 Creates on-brand **TopoLift** [Marp](https://marp.app/) slide decks from a
@@ -114,6 +129,13 @@ skills/
       README.md
       assets/        # template-topolift.md + theme-topolift.css
       references/    # marp syntax, image patterns, best practices, theme guides
+    presentation-workshop/
+      SKILL.md
+      README.md
+      requirements.txt
+      assets/        # Teal Editorial POTX, starter PPTX, PDF preview
+      references/    # template guide + example content manifest
+      scripts/       # builder, formatting support, regression tests
 ```
 
 ## Install
@@ -304,3 +326,30 @@ body text — are part of the theme, so every deck inherits them automatically.
 When iterating, render PNG probes (`--images png`) and visually verify the
 busiest slides: nothing should touch the footer, and the top header should sit
 at the same height on a short slide and a full one.
+
+## Usage: `presentation-workshop`
+
+Ask the agent to use the skill with your topic or source notes:
+
+```text
+Use presentation-workshop to help me plan a 30-minute talk from these notes.
+Ask me one question at a time, and help me agree the story before building it.
+```
+
+The agent keeps a local content plan, develops slides in small batches, and
+obtains approval before generating a deck. The bundled builder uses Python
+3.10+ with `python-pptx` and `lxml`; LibreOffice and a PDF renderer support the
+separate visual-review step. It does not make model calls or upload files.
+
+From this source checkout:
+
+```bash
+python3 -m pip install -r skills/design/presentation-workshop/requirements.txt
+python3 skills/design/presentation-workshop/scripts/build_presentation.py --layouts
+python3 skills/design/presentation-workshop/scripts/test_build_presentation.py
+```
+
+See the [skill README](skills/design/presentation-workshop/README.md) for
+installation/discovery, the content manifest, build commands, visual checks,
+and limitations. Keep the entire skill directory together when copying it;
+it has no dependency on the original Presentations repository.
