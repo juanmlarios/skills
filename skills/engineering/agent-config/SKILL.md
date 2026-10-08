@@ -1,34 +1,32 @@
 ---
 name: agent-config
-description: Install and maintain reusable Claude and Pi subagents, GitNexus + Context Mode instructions, and Claude Code hooks. Use when syncing custom agents, global AGENTS.md or CLAUDE.md files, shared routing, or Claude hook configuration across machines.
+description: Maintain shared coding-agent instruction templates and managed Claude/Pi agents. Use when syncing agent-config or changing its global policy source.
 ---
 
 # Agent Config
 
-Maintain reusable GitNexus and Context Mode instructions and hooks from this version-controlled source. Generated global files are outputs, so editing them loses changes on the next sync.
+## Ownership
 
-## Source and generated ownership
+- Shared preferences live in `assets/instructions/shared-routing.md`; client-specific tools live in `claude.md` and `codex.md` beside it.
+- Managed agent definitions live in `assets/agents/{claude,pi}/`.
+- Sync replaces only managed instruction blocks, preserving text outside them. Existing unmanaged Claude instructions are preserved.
+- Hooks, plugin settings and MCP registrations are user-owned and are never installed or modified by sync. Do not reintroduce retired integrations.
 
-- Edit policy in `assets/instructions/`, agent definitions in `assets/agents/{claude,pi}/`, and hook behavior in `hooks/claude/`; installed files under `$HOME` are generated outputs.
-- Keep shared policy in `assets/instructions/shared-routing.md`, tool-specific policy in its matching source file, and managed hook behavior in `hooks/claude/gitnexus-context-mode-dispatcher.cjs`.
-- Sync replaces managed marker blocks and managed agent files. It refuses to overwrite an unmanaged agent filename unless the user explicitly reruns it with `--force-agents`.
+## Read-only requests
 
-## Read-only help
+Read relevant source and installed files, then report. Do not run sync for an explanation or audit.
 
-For explain, inspect, or status requests, read `references/overview.md` and the relevant source or generated files, then report how the package, targets, and managed markers relate. Do not run preview, sync, or doctor unless the user explicitly requests an installation or update.
+## Approved changes
 
-## Installation or update workflow
-
-When the user explicitly requests an installation or update, read `references/overview.md` when the split or targets matter. Then make the source change and use this evidence-backed sequence:
+Update the owning source first. For instruction-only updates:
 
 ```bash
-node scripts/sync-agent-config.mjs --dry-run
-node scripts/sync-agent-config.mjs
-node scripts/doctor-agent-config.mjs
+node scripts/test-agent-config.mjs
+node scripts/sync-agent-config.mjs --instructions-only --dry-run
+node scripts/sync-agent-config.mjs --instructions-only
+node scripts/doctor-agent-config.mjs --instructions-only
 ```
 
-The preview identifies intended managed changes; sync applies them; doctor confirms installed instructions, agents, markers, and hooks agree with source. If existing agent filenames are unmanaged, stop and ask before using `--force-agents` to adopt them. Restart Claude Code, Pi, or Codex when a fresh session is needed to load changes.
+Omit `--instructions-only` only when agent installation or updates are also authorized. Sync refuses to overwrite unmanaged same-named agents; ask before adopting them with `--force-agents`.
 
-## Installed targets
-
-The sync script installs Claude agents to `$HOME/.claude/agents/`, Pi agents to `$HOME/.pi/agent/agents/`, and manages the existing instruction, dispatcher, and Claude settings targets.
+Start a fresh client session after instruction changes. Verify app personalization separately rather than assuming an independent copy or automatic synchronization. See `references/overview.md` for installed targets.

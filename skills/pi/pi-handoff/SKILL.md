@@ -9,7 +9,7 @@ Prepare a compact Pi-to-Pi session handoff. The active workplan capsule remains 
 
 ## Safety checkpoint
 
-Before writing the handoff, resolve the exact `RUN.md` path from the supplied slug/context and use lean-ctx exclusively for repository state and edits; native tools are allowed for the temporary handoff destination outside the project root. Do not tree-scan, glob, or repeatedly read a known capsule.
+Before writing the handoff, resolve the exact `RUN.md` path from the supplied slug/context and use native tools for repository state and edits. Do not tree-scan, glob, or repeatedly read a known capsule.
 
 1. Read `RUN.md` once in anchored mode. Update it only when the exact next action, ownership, validation/review state, blocker, or known child run ID is missing or stale. Do not patch merely to refresh a timestamp, and do not reread after a successful patch.
 2. Use recorded ownership plus one focused fleet/status check only when `RUN.md` indicates a possibly live child. Do not inspect artifact-directory trees as a proxy for liveness. Do not launch a fresh session while a mutation-capable child may still own source files; wait, pause it safely, or ask the user.

@@ -51,7 +51,7 @@ Pass the list and the brief via `args`; timestamps too (`Date.now()` is unavaila
 
 ## Templates by task type
 
-- **N-partition / N-head gate sweep** — items = partitions; check = run the gate command via `ctx_shell`, return exit + key lines; no refute stage needed (the gate output is the evidence); persist `{item, exit, path}`.
+- **N-partition / N-head gate sweep** — items = partitions; check = run the gate command via the native shell tool, return exit + key lines; no refute stage needed (the gate output is the evidence); persist `{item, exit, path}`.
 - **N-scope review + refutation** — items = scopes with owned paths; check = review lens returning findings with `file:symbol`; refute = 2 skeptics per finding; keep findings with ≥1 non-refuted vote. Ask for everything and filter afterwards — "only report high-severity" makes the model report less.
 - **N-file census** — items = files; check = extract the fact (headers, citations, links) with a path per claim; no refute; a completeness critic agent at the end asks what was missed.
 

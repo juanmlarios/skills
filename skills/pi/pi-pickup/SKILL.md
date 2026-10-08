@@ -18,7 +18,7 @@ Ask for the path/slug only when it cannot be resolved unambiguously.
 ## Recovery
 
 1. Read the supplied handoff when present and resolve its authoritative `RUN.md` path.
-2. Load current project-local instructions before repository mutation. Bootstrap lean-ctx and use it exclusively for in-root reads, search, shell, git, validation, and edits; native tools require a stated narrow exception outside its root.
+2. Load current project-local instructions before repository mutation. Use native read/search/shell/edit/write tools with verified repository paths and cwd.
 3. Resolve the exact capsule paths from the handoff/slug. Read `RUN.md` once in anchored mode, then only the current task and dependency blocks from adjacent `PLAN.md`. Do not tree-scan, glob, or compose a capsule whose paths are already known.
 4. Run one focused branch/status/diff check and compare changed files with recorded active ownership; do not repeat unchanged state/file reads.
 5. Query saved child run IDs when available. A live mutation-capable child retains ownership; never launch a competing writer.

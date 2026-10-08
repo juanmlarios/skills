@@ -1,79 +1,25 @@
 # Agent Config
 
-Reusable custom agents and GitNexus + Context Mode configuration for Claude Code, Pi, and Codex.
+Shared working agreements, client-specific instruction templates and managed Claude/Pi agent definitions.
 
-This package exists because GitNexus and Context Mode are both useful, but they should not compete for the same investigation step.
+## Targets
 
-- GitNexus should answer code meaning, symbol context, execution flow, and impact questions.
-- Context Mode should protect the context window for high-output commands, logs, tests, broad reads, and raw fetches.
+- `~/.agent-instructions/context-gitnexus-routing.md` — shared preferences (legacy filename).
+- `~/.codex/AGENTS.md` — managed shared and Codex blocks; unmanaged notes preserved.
+- `~/.claude/CLAUDE.md` — managed blocks updated if present; existing unmanaged instructions preserved.
+- `~/.claude/agents/*.md` and `~/.pi/agent/agents/*.md` — only for full sync.
 
-The package stores the policy, hook dispatcher, and install/sync script in one version-controlled place.
+Claude uses native repository tools. Codex uses native repository tools with explicit working directories. GitNexus is used conditionally for dependency, execution-flow and impact questions. Sync never changes hooks, plugins or MCP settings.
 
-## What It Installs
-
-```text
-$HOME/.claude/agents/*.md
-$HOME/.pi/agent/agents/*.md
-$HOME/.agent-instructions/context-gitnexus-routing.md
-$HOME/.claude/CLAUDE.md
-$HOME/.codex/AGENTS.md
-$HOME/.claude/hooks/gitnexus/gitnexus-context-mode-dispatcher.cjs
-```
-
-It also patches `$HOME/.claude/settings.json` to enable:
-
-- custom `PreToolUse` dispatcher
-- GitNexus `PostToolUse` freshness check
-- Context Mode `SessionStart`
-- Context Mode `PreCompact`
-- Context Mode `UserPromptSubmit`
-
-## Why It Is A Skill
-
-Skills package repeatable agent behavior with assets and scripts. This one packages an operations workflow: install shared instructions, configure hooks, and explain the routing contract.
-
-## How It Relates To Plugins
-
-This does not replace plugins.
-
-- GitNexus plugin/MCP provides code intelligence.
-- Context Mode plugin/MCP provides context protection.
-- This package coordinates them with instructions and hook routing.
-
-## Sync
-
-From this directory:
+## Instruction-only update
 
 ```bash
-node scripts/sync-agent-config.mjs
+node scripts/test-agent-config.mjs
+node scripts/sync-agent-config.mjs --instructions-only --dry-run
+node scripts/sync-agent-config.mjs --instructions-only
+node scripts/doctor-agent-config.mjs --instructions-only
 ```
 
-Preview changes:
+For an authorized agent update, omit `--instructions-only`. Existing unmanaged agent files require explicit adoption with `--force-agents`.
 
-```bash
-node scripts/sync-agent-config.mjs --dry-run
-```
-
-Existing same-named agent files without the managed marker are preserved. Review them, then explicitly adopt them when intended:
-
-```bash
-node scripts/sync-agent-config.mjs --force-agents
-```
-
-Restart Claude Code or Pi after agent changes. Start a new Codex session after global instruction changes.
-
-## Verify
-
-Check whether Claude Code, Claude for Mac local-agent state, and Codex are wired as expected:
-
-```bash
-node scripts/doctor-agent-config.mjs
-```
-
-This does not prove a future model will choose the correct tool every time. It verifies the configuration that makes the desired routing available:
-
-- shared instruction files present
-- Claude Code hook dispatcher present
-- Codex MCP servers present
-- Claude local-agent Context Mode plugin enabled
-- Claude user-state GitNexus MCP present
+Start a fresh session after changes and verify the app's personalization field separately. Details: `references/overview.md`.

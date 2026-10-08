@@ -13,7 +13,7 @@ Locate the chosen strategy in the current context or `workplans/<slug>/`. If onl
 
 Use targeted discovery only to resolve contract details such as exact paths, symbols, helpers, ownership, and validation. Delegate broad reading and consume concise file-backed reports. When the strategy path/slug is supplied, read it directly; do not glob or tree-scan for alternatives.
 
-For repository operations, bootstrap lean-ctx and use its matching read/search/glob/tree/shell/patch tools exclusively. Use `ctx_compose` only for unfamiliar code understanding; exact strategy and plan paths may be read directly. Native repository tools require a stated narrow exception outside the lean-ctx root.
+For repository operations, use native read/search/shell/edit/write tools. Read exact supplied paths directly and limit unfamiliar-code discovery to missing contract facts.
 
 ## Outputs
 
@@ -27,7 +27,7 @@ workplans/<slug>/RUN.md        # initialized boardless recovery state
 
 Create `DECISIONS.md` only if a decomposition decision is actually made. Do not create source changes, child agents for implementation, empty report directories, or any task-board objects.
 
-Before initializing `RUN.md`, read `../pi-orchestrate/references/run-state.md` completely once. It is outside the repository root, so use one declared native external read rather than first attempting lean-ctx. Never overwrite an existing `RUN.md`; update the existing capsule or ask before resetting it.
+Before initializing `RUN.md`, read `../pi-orchestrate/references/run-state.md` completely once using the native read tool. Never overwrite an existing `RUN.md`; update the existing capsule or ask before resetting it.
 
 ## Authoring loop
 
@@ -78,7 +78,7 @@ Artifact format: prose-header | raw-exact
 
 ## Quality gate
 
-Every task must have explicit dependencies, disjoint or serialized source ownership, acceptance criteria, a command that can fail under the active lean-ctx shell/tool policy, expected evidence, a unique report path, and a declared prose-header or raw-exact artifact format. The configured report is runtime-persisted and never belongs in `Owned files`. In this environment, validation must not use inline interpreter flags such as `python3 -c`, the `exit` command, zsh's reserved `status` variable, or blocked utilities such as `shasum`. For cleanup-preserving checks use a neutral variable and final `test`, for example `...; rc=$?; rm -f "$tmp"; test "$rc" -eq 0`. Choose an executable check during planning so execution does not discover policy by failure. The plan must identify user decisions that block execution rather than hiding them inside a builder brief.
+Every task must have explicit dependencies, disjoint or serialized source ownership, acceptance criteria, a command that can fail under the active shell/tool policy, expected evidence, a unique report path, and a declared prose-header or raw-exact artifact format. The configured report is runtime-persisted and never belongs in `Owned files`. Choose an executable check during planning; preserve the validation exit status and required cleanup. The plan must identify user decisions that block execution rather than hiding them inside a builder brief.
 
 ## Anti-patterns
 

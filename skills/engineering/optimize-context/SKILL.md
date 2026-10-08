@@ -12,7 +12,7 @@ Health-check the context stack across harnesses. Origin: the 2026-07-16 context 
 Claude: `~/.claude/CLAUDE.md` (+ `@includes`), `~/.claude/settings.json` (permissions, hooks, plugins, mcpServers), `~/.claude.json` (mcpServers, per-project), `~/.claude/skills/`, `~/.claude/agents/`, `~/.claude/hooks/`, `~/.claude/projects/*/memory/`, per-repo `CLAUDE.md` + `.claude/`.
 Codex: `~/.codex/AGENTS.md` (+ includes), `~/.codex/config.toml` (mcp_servers, skills.config, model_providers), `~/.codex/hooks.json`, `~/.codex/skills/`, per-repo `AGENTS.md` + `.codex/`.
 Pi: `~/.pi/rules/`, `~/.pi/agent/{mcp.json, skills/, pi-hermes-memory/, projects-memory/}`.
-Shared: `~/.agents/skills/`, headroom (`~/.headroom/mcp_installs.json`, LaunchAgents `com.headroom.*`, proxy env), `~/.lean-ctx/config.toml`.
+Shared: `~/.agents/skills/`, headroom (`~/.headroom/mcp_installs.json`, LaunchAgents `com.headroom.*`, proxy env).
 
 ## Checks
 
@@ -23,7 +23,7 @@ Every absolute path, binary, and localhost URL referenced by the surfaces above 
 Collect all directives a single session would receive (global md + includes + plugin/session-start blocks + repo md + MCP server instructions). Flag conflicts on the same topic — write policy, read policy, "use X first" tool routing, output style, review gates. Heuristic: same verb-object, different tool or opposite modality (ALWAYS/NEVER vs use-freely). Also flag: permissions.deny entries that break documented workflows (the classic: denying `Read` breaks native `Edit`).
 
 ### 3. Duplication scan (WARN)
-Identical or near-identical blocks: across CLAUDE.md vs AGENTS.md in one repo; across repo copies and worktrees; appended versioned tool blocks in one file (e.g. two `lean-ctx-rules` generations); the same persona/output-style instruction from multiple sources. Tool-managed marker blocks (`<!-- gitnexus:start -->`) that a generator re-fattened after a manual trim.
+Identical or near-identical blocks: across CLAUDE.md vs AGENTS.md in one repo; across repo copies and worktrees; appended versioned tool blocks in one file (e.g. duplicated managed routing blocks); the same persona/output-style instruction from multiple sources. Tool-managed marker blocks (`<!-- gitnexus:start -->`) that a generator re-fattened after a manual trim.
 
 ### 4. Session budget (WARN >8k tokens, FAIL >15k)
 Estimate startup injection per harness per repo: global md + includes + session hooks' output + plugin blocks + MCP instructions + skill descriptions + repo md. List the top-5 contributors by size. Rule: an always-loaded file carries only durable behavior; procedures belong in skills (free until invoked), episodic facts in memory.

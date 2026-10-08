@@ -1,13 +1,6 @@
-# Claude Code Adapter
+# Claude Code repository tools
 
-Claude Code can run hooks from `/Users/juan/.claude/settings.json`.
-
-Use the installed dispatcher for `PreToolUse`. It routes semantic code search to GitNexus and high-output/raw context work to Context Mode.
-
-Hook policy:
-
-- Keep GitNexus `PostToolUse` for git mutation freshness checks.
-- Keep Context Mode `SessionStart`, `PreCompact`, and `UserPromptSubmit`.
-- Do not also register Context Mode's default `PreToolUse` directly unless the dispatcher is removed.
-
-Restart Claude Code after hook configuration changes.
+- Use native Read, Grep, Glob, Bash, Edit and Write for repository work.
+- When GitNexus has a usable index, use it for dependency and execution-flow questions and before changing shared/exported behavior. Confirm relevant references in source; an absent graph caller is not proof that none exists.
+- Use WebFetch, WebSearch or Ref for documentation and research.
+- Preserve existing user hook and MCP configuration. This package does not install tool-routing hooks or context middleware.

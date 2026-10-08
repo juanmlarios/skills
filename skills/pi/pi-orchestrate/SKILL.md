@@ -21,7 +21,7 @@ Do work directly when the exact target is known and its output is needed for the
 
 ## Start or recover
 
-Before reading or changing in-root workplan files, bootstrap lean-ctx and apply launch invariant 1.
+Before reading or changing workplan files, verify the repository root and apply launch invariant 1.
 
 1. Resolve `WORKPLAN_DIR=workplans/<slug>/` to an absolute path before any plan/state read. When a slug is supplied, do not probe for root-level `PLAN.md` or `RUN.md`.
 2. Require `WORKPLAN_DIR/PLAN.md`. If `RUN.md` is absent, initialize it from the plan using `references/run-state.md`, with **Wave as the first task-table column**; never overwrite existing run state implicitly.
@@ -33,7 +33,7 @@ Before reading or changing in-root workplan files, bootstrap lean-ctx and apply 
 
 ## Launch invariants
 
-1. Bootstrap lean-ctx before repository work, then use it exclusively for in-root reads, search, discovery, shell, git, validation, and edits. Use `ctx_compose` for unfamiliar code understanding; exact-file contracts may go directly to `ctx_read`. Native repository tools require a stated narrow exception outside the lean-ctx root—never use them merely because they are available.
+1. Verify the repository root before work, then use native read/search/shell/edit/write tools with explicit paths and cwd. Exact-file contracts may be read directly.
 2. Run `subagent({ action: "list" })` before the first dispatch when availability is uncertain. Use `models` only after model/profile changes and `doctor` only for runtime wiring failures.
 3. Use absolute unique `output` paths with `outputMode: "file-only"`. Children write only their assigned report plus explicitly owned source files.
 4. Keep one source writer in the active tree. Parallelize only independent read-only work; use clean isolated worktrees for intentionally independent writers.
@@ -112,10 +112,10 @@ Before an intentional handoff or manual compaction, checkpoint the exact next ac
 
 ## Verification and safety
 
-Writer briefs name exact commands, cwd, what success proves, and acceptable blockers. During planned-state preflight, confirm validation is executable under the active lean-ctx shell/tool policy; translate a blocked form once to an equivalent recorded check instead of trial-and-retry. Prefer behavioral probes over existence checks. Focused validation proves the task behavior; changes to shared or widely imported surfaces also require the project-appropriate broader collection, build, or suite so filters cannot hide cross-module breakage. The parent owns that integration gate. Reuse a just-passed validation result when no relevant source or environment changed; close-out should recheck only the state/docs it subsequently changed. Parent checks `git diff --stat`, risky hunks, focused validation, then broader gates explicitly required by current project instructions or the plan. Do not probe GitNexus merely because its tools are installed.
+Writer briefs name exact commands, cwd, what success proves, and acceptable blockers. During planned-state preflight, confirm validation is executable under the active shell/tool policy; translate a blocked form once to an equivalent recorded check instead of trial-and-retry. Prefer behavioral probes over existence checks. Focused validation proves the task behavior; changes to shared or widely imported surfaces also require the project-appropriate broader collection, build, or suite so filters cannot hide cross-module breakage. The parent owns that integration gate. Reuse a just-passed validation result when no relevant source or environment changed; close-out should recheck only the state/docs it subsequently changed. Parent checks `git diff --stat`, risky hunks, focused validation, then broader gates explicitly required by current project instructions or the plan. Do not probe GitNexus merely because its tools are installed.
 
 Never commit, push, perform destructive git, skip hooks, deploy, spend live-cost resources, or use credentials without explicit current-session authorization.
 
 ## Anti-patterns
 
-Never: parallel writers in one tree; temporary-worktree children reindexing GitNexus; pointer-only briefs without ownership/validation; reviewer-per-artifact ceremony; full logs in parent context; hard tool budgets on mutation-capable children; silent validation; unbounded fix loops; source edits by reviewers; parent rewrites of child reports; unanchored `ctx_patch` edits; exact-contract compose calls; duplicate unchanged state/file/reference reads; standalone timestamp calls; ready-only checkpoints immediately overwritten after launch; retrying known-blocked commands; duplicate post-wait/final fleet checks; deleting runtime artifacts before every child stops and canonical evidence is persisted; declaring completion while `.pi-subagents/artifacts/` remains; stale `RUN.md`; trusting compaction memory over disk; or success without inspecting the actual diff.
+Never: parallel writers in one tree; temporary-worktree children reindexing GitNexus; pointer-only briefs without ownership/validation; reviewer-per-artifact ceremony; full logs in parent context; hard tool budgets on mutation-capable children; silent validation; unbounded fix loops; source edits by reviewers; parent rewrites of child reports; edits without a current source read; broad discovery for exact-file contracts; duplicate unchanged state/file/reference reads; standalone timestamp calls; ready-only checkpoints immediately overwritten after launch; retrying known-blocked commands; duplicate post-wait/final fleet checks; deleting runtime artifacts before every child stops and canonical evidence is persisted; declaring completion while `.pi-subagents/artifacts/` remains; stale `RUN.md`; trusting compaction memory over disk; or success without inspecting the actual diff.

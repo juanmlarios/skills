@@ -41,7 +41,7 @@ cd ~/.claude/skills/playwright-automation && node check-status.js <url>
 ```
 
 ### Custom Script
-Write the script to a file (e.g. under the OS temp dir) and run it with `node <file> <url>` from the skill directory so `require('playwright')` resolves. Inline `node <<'EOF'` heredocs are blocked by the shell allowlist in lean-ctx sessions; the patterns below are file contents, not commands to paste.
+Write the script to a file (e.g. under the OS temp dir) and run it with `node <file> <url>` from the skill directory so `require('playwright')` resolves.
 
 ## Common Patterns
 

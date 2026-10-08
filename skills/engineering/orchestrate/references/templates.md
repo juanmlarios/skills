@@ -61,10 +61,9 @@ IMPACT (approved): <blast radius from the contract — do NOT re-run impact for 
 FEATURE BRANCH: <recorded feature branch>. EXPECTED WORKTREE BASE: <exact committed SHA>.
 WORKTREE MODE: <feature-tree | isolated; canonical checkout: <absolute parent git root>>. Isolated mode:
   preflight `pwd; git rev-parse --show-toplevel; git rev-parse --git-dir; git rev-parse HEAD` must show the
-  assigned worktree (not the canonical checkout) and HEAD == expected base; that is the only unwrapped
-  repository Bash. Every later repository operation goes through `$HOME/.local/bin/lean-ctx-worktree`
-  (`read <file>` / `grep <pattern>` / `-c '<command>'`); native Edit/Write for mutations. Any mismatch,
-  wrapper failure, lean-ctx MCP use, or unwrapped repository Bash after preflight: stop blocked, never fall back.
+  assigned worktree (not the canonical checkout) and HEAD == expected base. Use native tools with
+  absolute worktree paths and explicit cwd for all subsequent operations. If root or base mismatches,
+  stop blocked; never edit the canonical checkout or silently switch trees.
 VERIFICATION MODE: <normal | FRESH VERIFICATION REQUIRED>.
 VALIDATION: normal mode runs `<command>` from <cwd> and includes real output. In fresh-verification
   mode, do not run it: write a compact receipt listing changed paths, AC addressed, unresolved items,
@@ -86,7 +85,7 @@ Selection criteria: SKILL.md → Agent stable.
 
 ```
 Freshly verify task T<n> of workplan <slug>. Do not edit anything except your report.
-REPORT: workplans/<slug>/agents/T<n>-verify.md — create it with ctx_patch op=create; if it exists, say so and return inline.
+REPORT: workplans/<slug>/agents/T<n>-verify.md — create it with the native write tool; if it exists, say so and return inline.
 CONTRACT: <acceptance criteria + DoD verbatim>
 BASELINE / EXPECTED SCOPE: <ref and owned files>
 BUILDER RECEIPT: <path — evidence to check, not truth to trust>
@@ -126,7 +125,7 @@ ACCEPTED FINDINGS: <numbered, file:line, from the review — only these>
 RAW FAILURE OUTPUT: <path under workplans/<slug>/validation/, or verbatim if short>
 OWNED FILES: <same as the task contract>
 WORKTREE MODE: <feature-tree | isolated; canonical checkout: <path>; expected base: <SHA>> — isolated
-  means `worktree-fixer` with the same preflight and wrapper rules as the builder brief.
+  means `worktree-fixer` with the same preflight and worktree-path rules as the builder brief.
 VALIDATION: re-run `<command>`; include real output.
 REPORT: workplans/<slug>/agents/T<n>-fix<r>.md; reply with your definition's final block plus ≤3 bullets.
 DO NOT: redesign, commit, or touch files outside OWNED FILES. If the fix needs redesign, stop and say so —

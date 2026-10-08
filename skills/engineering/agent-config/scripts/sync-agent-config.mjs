@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { chmodSync, copyFileSync, existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -10,12 +10,12 @@ const skillDir = resolve(__dirname, '..');
 const home = process.env.HOME || homedir();
 const dryRun = process.argv.includes('--dry-run');
 const forceAgents = process.argv.includes('--force-agents');
+const instructionsOnly = process.argv.includes('--instructions-only');
 
 const source = {
   shared: join(skillDir, 'assets/instructions/shared-routing.md'),
   claude: join(skillDir, 'assets/instructions/claude.md'),
   codex: join(skillDir, 'assets/instructions/codex.md'),
-  dispatcher: join(skillDir, 'hooks/claude/gitnexus-context-mode-dispatcher.cjs'),
   claudeAgents: join(skillDir, 'assets/agents/claude'),
   piAgents: join(skillDir, 'assets/agents/pi'),
 };
@@ -24,14 +24,8 @@ const target = {
   shared: join(home, '.agent-instructions/context-gitnexus-routing.md'),
   claude: join(home, '.claude/CLAUDE.md'),
   codex: join(home, '.codex/AGENTS.md'),
-  dispatcher: join(home, '.claude/hooks/gitnexus/gitnexus-context-mode-dispatcher.cjs'),
   claudeAgents: join(home, '.claude/agents'),
   piAgents: join(home, '.pi/agent/agents'),
-  settings: join(home, '.claude/settings.json'),
-  contextModeHeal: join(home, '.claude/hooks/context-mode-cache-heal.mjs'),
-  gitnexusHook: join(home, '.claude/hooks/gitnexus/gitnexus-hook.cjs'),
-  contextModePreCompact: join(home, '.claude/plugins/marketplaces/context-mode/hooks/precompact.mjs'),
-  contextModeUserPrompt: join(home, '.claude/plugins/marketplaces/context-mode/hooks/userpromptsubmit.mjs'),
 };
 
 function read(path) {
@@ -49,15 +43,6 @@ function write(path, content) {
   }
   if (!dryRun) writeFileSync(path, `${content.trimEnd()}\n`);
   console.log(`${dryRun ? 'would write' : 'wrote'} ${path}`);
-}
-
-function copyExecutable(from, to) {
-  ensureDir(to);
-  if (!dryRun) {
-    copyFileSync(from, to);
-    chmodSync(to, 0o755);
-  }
-  console.log(`${dryRun ? 'would copy' : 'copied'} ${to}`);
 }
 
 const managedAgentMarker = '<!-- agent-config:managed-agent -->';
@@ -115,85 +100,32 @@ function renderInstructionFile(adapterName, adapterContent) {
   ].join('\n\n');
 }
 
-function hook(command, timeout, statusMessage) {
-  const h = { type: 'command', command };
-  if (timeout) h.timeout = timeout;
-  if (statusMessage) h.statusMessage = statusMessage;
-  return h;
-}
-
-function patchClaudeSettings() {
-  let settings = {};
-  if (existsSync(target.settings)) {
-    settings = JSON.parse(readFileSync(target.settings, 'utf8'));
+function syncInstructions(path, adapterName, adapterPath, preserveUnmanaged = false) {
+  if (!existsSync(path)) {
+    write(path, renderInstructionFile(adapterName, read(adapterPath)));
+    return;
   }
-  settings.hooks = settings.hooks || {};
-  settings.hooks.PreToolUse = [
-    {
-      matcher: 'Grep|Glob|Bash|Read|WebFetch',
-      hooks: [
-        hook(
-          `node "${target.dispatcher}"`,
-          10,
-          'Routing through GitNexus or Context Mode...',
-        ),
-      ],
-    },
-  ];
-  settings.hooks.PostToolUse = [
-    {
-      matcher: 'Bash',
-      hooks: [
-        hook(
-          `node "${target.gitnexusHook}"`,
-          10,
-          'Checking GitNexus index freshness...',
-        ),
-      ],
-    },
-  ];
-  settings.hooks.SessionStart = [
-    {
-      hooks: [
-        hook(`"${target.contextModeHeal}"`),
-      ],
-    },
-  ];
-  settings.hooks.PreCompact = [
-    {
-      hooks: [
-        hook(
-          `node "${target.contextModePreCompact}"`,
-          10,
-          'Saving Context Mode session state...',
-        ),
-      ],
-    },
-  ];
-  settings.hooks.UserPromptSubmit = [
-    {
-      hooks: [
-        hook(
-          `node "${target.contextModeUserPrompt}"`,
-          10,
-          'Preparing Context Mode routing...',
-        ),
-      ],
-    },
-  ];
-
-  write(target.settings, JSON.stringify(settings, null, 2));
+  const existing = readFileSync(path, 'utf8');
+  if (preserveUnmanaged && !existing.includes('<!-- agent-config:start ')) {
+    console.log(`preserved unmanaged instructions ${path}`);
+    return;
+  }
+  const shared = replaceBlock(existing, 'shared-routing', read(source.shared));
+  write(path, replaceBlock(shared, adapterName, read(adapterPath)));
 }
 
-checkAgentConflicts(source.claudeAgents, target.claudeAgents);
-checkAgentConflicts(source.piAgents, target.piAgents);
+if (!instructionsOnly) {
+  checkAgentConflicts(source.claudeAgents, target.claudeAgents);
+  checkAgentConflicts(source.piAgents, target.piAgents);
+}
 
 write(target.shared, read(source.shared));
-write(target.claude, renderInstructionFile('claude-adapter', read(source.claude)));
-write(target.codex, renderInstructionFile('codex-adapter', read(source.codex)));
-copyExecutable(source.dispatcher, target.dispatcher);
-syncAgents(source.claudeAgents, target.claudeAgents);
-syncAgents(source.piAgents, target.piAgents);
-patchClaudeSettings();
+syncInstructions(target.claude, 'claude-adapter', source.claude, true);
+syncInstructions(target.codex, 'codex-adapter', source.codex);
+if (!instructionsOnly) {
+  syncAgents(source.claudeAgents, target.claudeAgents);
+  syncAgents(source.piAgents, target.piAgents);
+}
+// Hook, plugin and MCP settings are user-owned; syncing instructions never changes them.
 
 console.log(dryRun ? 'dry run complete' : 'sync complete');

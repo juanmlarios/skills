@@ -1,52 +1,19 @@
 # Agent Config Overview
 
-## Why This Exists
+## Policy layers
 
-GitNexus and Context Mode solve different problems:
+Global shared preferences cover scope, evidence, safety and concise reporting. Client adapters cover only their tool boundaries. Repository setup, tests and domain conventions belong in project instructions; detailed recovery and deployment workflows belong in skills.
 
-- GitNexus understands indexed repositories: symbols, callers, callees, execution flows, routes, impact, and refactor blast radius.
-- Context Mode protects the context window: high-output commands, logs, test output, broad file analysis, raw documentation, and web/API fetches.
+Claude and Codex use native repository tools. GitNexus is useful for code relationships when a usable index exists, but graph findings must be checked against source. No fixed output threshold requires a special middleware workflow.
 
-When both are active, overlapping hooks can waste time or produce less targeted context. The main conflict is `PreToolUse` for `Bash`, `Grep`, and broad reads. GitNexus should handle semantic code investigation first; Context Mode should handle high-output and raw context control.
+## Generated ownership
 
-## Relation To Plugins
+The sync script writes shared preferences to `~/.agent-instructions/context-gitnexus-routing.md` (a legacy filename) and updates named `agent-config` marker blocks in Codex instructions. Text outside those blocks remains unchanged. Existing unmanaged Claude instructions remain untouched; a missing file may be initialized from the shared and Claude templates.
 
-Plugins provide capabilities: MCP tools, hooks, skills, or app integrations.
+Full sync additionally installs managed Claude and Pi agents. Use `--instructions-only` to avoid agent changes. Conflicts with unmanaged agent files stop full sync before writes unless adoption was explicitly requested.
 
-This package also versions the custom Claude and Pi subagent definitions under `assets/agents/` and installs them into their canonical user-scoped directories. It does not replace the GitNexus or Context Mode plugins; it coordinates them:
+Hooks, plugins, MCP registrations, models and session data are outside this script's ownership. It does not install routing dispatchers or middleware. Adding or removing a tool requires a separately authorized configuration change.
 
-- GitNexus plugin/MCP remains the code intelligence layer.
-- Context Mode plugin/MCP remains the context-budget layer.
-- This skill installs the local instructions and hook dispatcher that decide which one should handle each situation.
+## Verification
 
-## Relation To Skills
-
-Skills are reusable instructions plus assets/scripts. This package is stored as a skill because it is a repeatable operational workflow:
-
-- explain the routing model
-- install shared global instructions and custom agents
-- install hook assets
-- patch Claude Code settings safely
-- sync updates across machines or projects
-
-## Recommended Routing
-
-- `Grep|Glob` -> GitNexus
-- `Bash` with `rg|grep` inside a `.gitnexus` repo -> GitNexus
-- other high-output `Bash` -> Context Mode
-- `Read|WebFetch` -> Context Mode
-- `PreCompact` -> Context Mode
-- `UserPromptSubmit` -> Context Mode
-- `PostToolUse` git mutations -> GitNexus freshness check
-
-## Why Generated Files Instead Of Symlinks
-
-Symlinks make Claude and Codex read the same exact file. That is simple, but it prevents independent tool-specific instructions.
-
-Generated files are better:
-
-- one shared source of truth
-- Claude-specific section in `CLAUDE.md`
-- Codex-specific section in `AGENTS.md`
-- local unmanaged notes can remain outside marker blocks
-- sync script can update all targets consistently
+Run the isolated-home regression check, preview the intended sync, apply only the authorized scope, then run doctor with the same scope. Doctor exits nonzero on failures. Start a fresh session to load changed instructions; verify desktop personalization independently. The scripts cannot prove what an already-running conversation has loaded.

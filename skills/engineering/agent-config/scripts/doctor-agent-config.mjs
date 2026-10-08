@@ -1,164 +1,71 @@
 #!/usr/bin/env node
 
-import { existsSync, lstatSync, readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const skillDir = resolve(__dirname, '..');
+const skillDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const home = process.env.HOME || homedir();
+const instructionsOnly = process.argv.includes('--instructions-only');
+let failures = 0;
+const read = (path) => readFileSync(path, 'utf8');
 
-const paths = {
-  shared: join(home, '.agent-instructions/context-gitnexus-routing.md'),
-  claudeInstructions: join(home, '.claude/CLAUDE.md'),
-  codexInstructions: join(home, '.codex/AGENTS.md'),
-  claudeSettings: join(home, '.claude/settings.json'),
-  claudePlugins: join(home, '.claude/plugins/installed_plugins.json'),
-  claudeUser: join(home, '.claude.json'),
-  codexConfig: join(home, '.codex/config.toml'),
-  dispatcher: join(home, '.claude/hooks/gitnexus/gitnexus-context-mode-dispatcher.cjs'),
-  claudeDesktop: join(home, 'Library/Application Support/Claude/claude_desktop_config.json'),
-  claudeAgentSource: join(skillDir, 'assets/agents/claude'),
-  piAgentSource: join(skillDir, 'assets/agents/pi'),
-  claudeAgents: join(home, '.claude/agents'),
-  piAgents: join(home, '.pi/agent/agents'),
-};
-
-function ok(label, detail = '') {
-  console.log(`[OK] ${label}${detail ? ` — ${detail}` : ''}`);
+function check(label, passed, detail = '') {
+  console.log(`[${passed ? 'OK' : 'FAIL'}] ${label}${detail ? ` — ${detail}` : ''}`);
+  if (!passed) failures++;
 }
 
-function warn(label, detail = '') {
-  console.log(`[WARN] ${label}${detail ? ` — ${detail}` : ''}`);
+function checkBlock(path, name, source) {
+  if (!existsSync(path)) return check(`${name} instructions`, false, path);
+  const expected = `<!-- agent-config:start ${name} -->\n${read(source).trimEnd()}\n<!-- agent-config:end ${name} -->`;
+  check(`${name} instructions match source`, read(path).includes(expected));
 }
 
-function fail(label, detail = '') {
-  console.log(`[FAIL] ${label}${detail ? ` — ${detail}` : ''}`);
+const sharedSource = join(skillDir, 'assets/instructions/shared-routing.md');
+const sharedTarget = join(home, '.agent-instructions/context-gitnexus-routing.md');
+check('shared working agreements match source', existsSync(sharedTarget) && read(sharedTarget).trimEnd() === read(sharedSource).trimEnd());
+const codex = join(home, '.codex/AGENTS.md');
+checkBlock(codex, 'shared-routing', sharedSource);
+checkBlock(codex, 'codex-adapter', join(skillDir, 'assets/instructions/codex.md'));
+
+const claude = join(home, '.claude/CLAUDE.md');
+check('Claude instructions exist', existsSync(claude));
+if (existsSync(claude)) {
+  if (read(claude).includes('<!-- agent-config:start ')) {
+    checkBlock(claude, 'shared-routing', sharedSource);
+    checkBlock(claude, 'claude-adapter', join(skillDir, 'assets/instructions/claude.md'));
+  } else {
+    console.log('[OK] unmanaged Claude instructions preserved');
+  }
 }
 
-function read(path) {
-  return readFileSync(path, 'utf8');
+for (const path of [codex, claude, sharedTarget]) {
+  if (existsSync(path)) check(`no removed-tool routing in ${path}`, !/context[- ]mode/i.test(read(path)));
+}
+const settings = join(home, '.claude/settings.json');
+if (existsSync(settings)) {
+  const hooks = JSON.parse(read(settings)).hooks || {};
+  check('no removed-tool hooks configured', !/context[- ]mode/i.test(JSON.stringify(hooks)));
+}
+const config = join(home, '.codex/config.toml');
+if (existsSync(config)) {
+  const text = read(config);
+  check('Codex GitNexus MCP configured', text.includes('[mcp_servers.gitnexus]'));
+  check('no removed-tool Codex MCP configured', !/^\s*\[mcp_servers\.["']?context-mode["']?\]/m.test(text));
+} else {
+  check('Codex config exists', false, config);
 }
 
-function json(path) {
-  return JSON.parse(read(path));
-}
-
-function has(path, text) {
-  return existsSync(path) && read(path).includes(text);
-}
-
-function checkFile(path, label) {
-  if (!existsSync(path)) return fail(label, path);
-  const st = lstatSync(path);
-  ok(label, `${path}${st.isSymbolicLink() ? ' (symlink)' : ''}`);
-}
-
-function checkAgents(label, sourceDir, targetDir) {
-  const names = readdirSync(sourceDir).filter((name) => name.endsWith('.md')).sort();
-  for (const name of names) {
-    const sourcePath = join(sourceDir, name);
-    const targetPath = join(targetDir, name);
-    if (!existsSync(targetPath)) {
-      fail(`${label} agent ${name}`, 'missing');
-    } else if (read(sourcePath) !== read(targetPath)) {
-      fail(`${label} agent ${name}`, 'differs from managed source');
-    } else {
-      ok(`${label} agent ${name}`);
+if (!instructionsOnly) {
+  for (const [label, sourceDir, targetDir] of [
+    ['Claude', join(skillDir, 'assets/agents/claude'), join(home, '.claude/agents')],
+    ['Pi', join(skillDir, 'assets/agents/pi'), join(home, '.pi/agent/agents')],
+  ]) {
+    for (const name of readdirSync(sourceDir).filter((name) => name.endsWith('.md')).sort()) {
+      const target = join(targetDir, name);
+      check(`${label} agent ${name} matches source`, existsSync(target) && read(target) === read(join(sourceDir, name)));
     }
   }
 }
-
-checkFile(paths.shared, 'shared routing file');
-checkFile(paths.claudeInstructions, 'Claude instructions file');
-checkFile(paths.codexInstructions, 'Codex instructions file');
-checkAgents('Claude', paths.claudeAgentSource, paths.claudeAgents);
-checkAgents('Pi', paths.piAgentSource, paths.piAgents);
-
-if (has(paths.claudeInstructions, 'GitNexus + Context Mode Routing')) {
-  ok('Claude instructions contain shared routing');
-} else {
-  fail('Claude instructions contain shared routing');
-}
-
-if (has(paths.codexInstructions, 'GitNexus + Context Mode Routing')) {
-  ok('Codex instructions contain shared routing');
-} else {
-  fail('Codex instructions contain shared routing');
-}
-
-if (existsSync(paths.claudeSettings)) {
-  const settings = json(paths.claudeSettings);
-  const hooks = settings.hooks || {};
-  const pre = hooks.PreToolUse?.[0];
-  const preCommand = pre?.hooks?.[0]?.command || '';
-  if (pre?.matcher === 'Grep|Glob|Bash|Read|WebFetch' && preCommand.includes('gitnexus-context-mode-dispatcher.cjs')) {
-    ok('Claude Code PreToolUse dispatcher configured');
-  } else {
-    fail('Claude Code PreToolUse dispatcher configured', `matcher=${pre?.matcher || 'missing'}`);
-  }
-  const postCommand = hooks.PostToolUse?.[0]?.hooks?.[0]?.command || '';
-  if (hooks.PostToolUse?.[0]?.matcher === 'Bash' && postCommand.includes('gitnexus-hook.cjs')) {
-    ok('Claude Code PostToolUse GitNexus freshness hook configured');
-  } else {
-    fail('Claude Code PostToolUse GitNexus freshness hook configured');
-  }
-  for (const event of ['SessionStart', 'PreCompact', 'UserPromptSubmit']) {
-    if (hooks[event]) ok(`Claude Code ${event} configured`);
-    else warn(`Claude Code ${event} configured`);
-  }
-} else {
-  fail('Claude Code settings file', paths.claudeSettings);
-}
-
-if (existsSync(paths.dispatcher)) {
-  const d = read(paths.dispatcher);
-  if (d.includes('GITNEXUS_HOOK') && d.includes('CONTEXT_MODE_PRETOOLUSE')) {
-    ok('dispatcher contains GitNexus and Context Mode targets');
-  } else {
-    fail('dispatcher contains GitNexus and Context Mode targets');
-  }
-} else {
-  fail('dispatcher exists', paths.dispatcher);
-}
-
-if (existsSync(paths.codexConfig)) {
-  const c = read(paths.codexConfig);
-  if (c.includes('[mcp_servers.gitnexus]')) ok('Codex GitNexus MCP configured');
-  else fail('Codex GitNexus MCP configured');
-  if (c.includes('[mcp_servers.context-mode]')) ok('Codex Context Mode MCP configured');
-  else fail('Codex Context Mode MCP configured');
-} else {
-  fail('Codex config file', paths.codexConfig);
-}
-
-if (existsSync(paths.claudePlugins)) {
-  const plugins = json(paths.claudePlugins);
-  const enabled = plugins.enabledPlugins || {};
-  const installed = plugins.plugins || {};
-  if (enabled['context-mode@context-mode'] && installed['context-mode@context-mode']) {
-    ok('Claude local agent Context Mode plugin enabled');
-  } else {
-    warn('Claude local agent Context Mode plugin enabled');
-  }
-} else {
-  warn('Claude plugin state file missing', paths.claudePlugins);
-}
-
-if (existsSync(paths.claudeUser)) {
-  const user = json(paths.claudeUser);
-  if (user.mcpServers?.gitnexus) ok('Claude user state GitNexus MCP configured');
-  else warn('Claude user state GitNexus MCP configured');
-} else {
-  warn('Claude user state file missing', paths.claudeUser);
-}
-
-if (existsSync(paths.claudeDesktop)) {
-  const desktop = json(paths.claudeDesktop);
-  const servers = Object.keys(desktop.mcpServers || {});
-  if (servers.length) ok('Claude for Mac classic MCP config has servers', servers.join(', '));
-  else warn('Claude for Mac classic MCP config empty', 'tools may still come from local agent plugins/user state');
-} else {
-  warn('Claude for Mac classic MCP config missing', paths.claudeDesktop);
-}
+process.exitCode = failures ? 1 : 0;
